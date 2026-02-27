@@ -128,10 +128,10 @@ class CharmsManager {
                                 <i class="fas fa-trash"></i>
                             </button>
                             <div style="margin-top: 5px;">
-                                <label class="charm-toggle" style="cursor: pointer; white-space: nowrap;">
+                                <label class="charm-equip-checkbox" title="Надеть/снять амулет">
                                     <input type="checkbox" class="charm-equip" data-index="${index}"
                                            ${charm.equipped ? 'checked' : ''}>
-                                    Надет
+                                    <i class="fas ${charm.equipped ? 'fa-check-circle' : 'fa-times-circle'}"></i>
                                 </label>
                             </div>
                         </div>
@@ -186,12 +186,17 @@ class CharmsManager {
                 } else {
                     button.disabled = false;
                 }
-            } else if (e.target.classList.contains('charm-equip') ||
-                      e.target.closest('.charm-equip')) {
-                const checkbox = e.target.classList.contains('charm-equip') ?
-                    e.target : e.target.closest('.charm-equip');
+            } else if (e.target.closest('.charm-equip')) {
+                const checkbox = e.target.closest('.charm-equip');
                 const index = parseInt(checkbox.dataset.index);
                 this.toggleCharmEquip(index, checkbox.checked);
+            } else if (e.target.closest('.charm-equip-checkbox')) {
+                // Клик по label с иконкой тоже переключает чекбокс
+                const checkbox = e.target.closest('.charm-equip-checkbox').querySelector('.charm-equip');
+                if (checkbox) {
+                    const index = parseInt(checkbox.dataset.index);
+                    this.toggleCharmEquip(index, !checkbox.checked);
+                }
             } else if (e.target.closest('.charm-desc-toggle')) {
                 e.preventDefault();
                 e.stopPropagation();

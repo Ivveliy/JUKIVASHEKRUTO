@@ -407,6 +407,103 @@ body {
     margin-left: 10px;
 }
 
+/* Фильтры боевых навыков */
+.combat-skills-filters {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    padding: 6px 12px;
+    background-color: var(--light-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.filter-btn:hover {
+    background-color: rgba(52, 152, 219, 0.1);
+    border-color: var(--accent-blue);
+}
+
+.filter-btn.active {
+    background-color: var(--accent-blue);
+    color: white;
+    border-color: var(--accent-blue);
+}
+
+/* Чекбокс активного навыка */
+.active-skill-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+}
+
+.active-skill-checkbox input[type="checkbox"] {
+    display: none;
+}
+
+.active-skill-checkbox i {
+    font-size: 1.2rem;
+    transition: all 0.2s ease;
+}
+
+/* Неактивный навык - красный прозрачный крест */
+.active-skill-checkbox i.fa-times-circle {
+    color: var(--accent-red);
+    opacity: 0.3;
+}
+
+/* Активный навык - яркая зелёная галочка */
+.active-skill-checkbox i.fa-check-circle {
+    color: var(--accent-green);
+    opacity: 1;
+}
+
+/* Чекбокс экипировки амулета - тот же стиль */
+.charm-equip-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+}
+
+.charm-equip-checkbox input[type="checkbox"] {
+    display: none;
+}
+
+.charm-equip-checkbox i {
+    font-size: 1.2rem;
+    transition: all 0.2s ease;
+}
+
+/* Не надетый амулет - красный прозрачный крест */
+.charm-equip-checkbox i.fa-times-circle {
+    color: var(--accent-red);
+    opacity: 0.3;
+}
+
+/* Надетый амулет - яркая зелёная галочка */
+.charm-equip-checkbox i.fa-check-circle {
+    color: var(--accent-green);
+    opacity: 1;
+}
+
+.active-skill-toggle-label {
+    padding: 8px;
+    background-color: var(--light-bg);
+    border-radius: 4px;
+    margin-top: 10px;
+}
+
 .toggle-description {
     background: none;
     border: none;
@@ -681,6 +778,44 @@ body {
     gap: 10px;
 }
 
+/* Кнопка закрытия модального окна (крестик) */
+.modal-header .close-modal {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 2rem;
+    cursor: pointer;
+    padding: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius);
+    transition: all 0.3s ease;
+    line-height: 1;
+}
+
+.modal-header .close-modal:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    transform: rotate(90deg);
+}
+
+/* Кнопка "Закрыть" в футере модального окна */
+.modal-footer .close-modal {
+    background-color: var(--accent-red);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    min-width: auto;
+}
+
+.modal-footer .close-modal:hover {
+    background-color: #c0392b;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
 .actions-panel {
     position: fixed;
     bottom: 20px;
@@ -858,17 +993,21 @@ body {
     border-radius: 4px;
     border-left: 3px solid transparent;
     font-size: 0.9rem;
-    display: none;
-    transition: border-color 0.3s ease;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, border-color 0.3s ease, padding 0.3s ease, margin 0.3s ease;
 }
 
 .skill-description:not(.hidden) {
-    display: block;
+    max-height: 500px;
     border-left-color: var(--accent-blue);
+    padding: 8px;
+    margin-top: 5px;
 }
 
 .skill-description.hidden {
-    display: none;
+    padding: 0;
+    margin-top: 0;
 }
 
 .status-toggle {

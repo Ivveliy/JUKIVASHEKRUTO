@@ -1,18 +1,33 @@
 // combatSkills.js - Блок боевых навыков
 class CombatSkillsManager {
     constructor() {
+        this.activeFilter = 'all'; // 'all', 'combat', 'magic', 'active'
         this.init();
     }
-    
+
     init() {
         this.renderBlock();
     }
-    
+
     renderBlock() {
         const content = document.getElementById('content-combatSkills');
         if (!content) return;
-        
+
         content.innerHTML = `
+            <div class="combat-skills-filters">
+                <button class="filter-btn ${this.activeFilter === 'all' ? 'active' : ''}" data-filter="all">
+                    Все
+                </button>
+                <button class="filter-btn ${this.activeFilter === 'combat' ? 'active' : ''}" data-filter="combat">
+                    <i class="fas fa-fist-raised"></i> Искусство
+                </button>
+                <button class="filter-btn ${this.activeFilter === 'magic' ? 'active' : ''}" data-filter="magic">
+                    <i class="fas fa-magic"></i> Магия
+                </button>
+                <button class="filter-btn ${this.activeFilter === 'active' ? 'active' : ''}" data-filter="active">
+                    <i class="fas fa-check-circle"></i> Активные
+                </button>
+            </div>
             <div class="combat-skills-list">
                 ${this.renderSkillsList()}
             </div>
@@ -20,40 +35,67 @@ class CombatSkillsManager {
                 <i class="fas fa-plus"></i> Добавить боевой навык
             </button>
         `;
-        
+
         this.setupEventListeners();
     }
-    
+
     renderSkillsList() {
         if (characterSheet.state.combatSkills.length === 0) {
             return '<p class="empty-list">Нет боевых навыков</p>';
         }
-        
-        // Разделяем навыки по типам
-        const combatArts = characterSheet.state.combatSkills.filter(skill => skill.type === 'combat');
-        const magic = characterSheet.state.combatSkills.filter(skill => skill.type === 'magic');
-        
+
+        // Инициализируем isActive для старых навыков (обратная совместимость)
+        characterSheet.state.combatSkills.forEach(skill => {
+            if (skill.isActive === undefined) {
+                skill.isActive = false;
+            }
+        });
+
+        // Фильтрация навыков
+        let filteredSkills = characterSheet.state.combatSkills;
+
+        if (this.activeFilter === 'combat') {
+            filteredSkills = filteredSkills.filter(skill => skill.type === 'combat');
+        } else if (this.activeFilter === 'magic') {
+            filteredSkills = filteredSkills.filter(skill => skill.type === 'magic');
+        } else if (this.activeFilter === 'active') {
+            filteredSkills = filteredSkills.filter(skill => skill.isActive);
+        }
+
+        if (filteredSkills.length === 0) {
+            return '<p class="empty-list">Нет навыков в выбранном фильтре</p>';
+        }
+
+        // Разделяем навыки по типам для отображения
+        const combatArts = filteredSkills.filter(skill => skill.type === 'combat');
+        const magic = filteredSkills.filter(skill => skill.type === 'magic');
+
         let html = '';
-        
+
         if (combatArts.length > 0) {
             html += `<h4>Боевые искусства</h4>`;
-            html += combatArts.map((skill, index) => this.renderSkillItem(skill, index)).join('');
+            html += combatArts.map((skill) => this.renderSkillItem(skill)).join('');
         }
-        
+
         if (magic.length > 0) {
             html += `<h4 style="margin-top: 20px;">Магия</h4>`;
-            html += magic.map((skill, index) => this.renderSkillItem(skill, index)).join('');
+            html += magic.map((skill) => this.renderSkillItem(skill)).join('');
         }
-        
+
         return html;
     }
     
-    renderSkillItem(skill, originalIndex) {
+    renderSkillItem(skill) {
+        // Инициализируем isActive для старых навыков (обратная совместимость)
+        if (skill.isActive === undefined) {
+            skill.isActive = false;
+        }
+
         // Находим реальный индекс в массиве
         const index = characterSheet.state.combatSkills.findIndex(s => s === skill);
-        
+
         let details = '';
-        
+
         if (skill.type === 'combat') {
             details = `
                 <div><small>Характеристика атаки: ${this.getCharacteristicName(skill.attackChar)}</small></div>
@@ -83,11 +125,17 @@ class CombatSkillsManager {
                 ` : ''}
             `;
         }
-        
+
         return `
             <div class="list-item" data-index="${index}">
                 <div>
-                    <strong>${skill.name}</strong>
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
+                        <label class="active-skill-checkbox" title="Отметить как активный">
+                            <input type="checkbox" class="skill-active-toggle" ${skill.isActive ? 'checked' : ''} data-index="${index}">
+                            <i class="fas ${skill.isActive ? 'fa-check-circle' : 'fa-times-circle'}"></i>
+                        </label>
+                        <strong>${skill.name}</strong>
+                    </div>
                     <div class="skill-type">
                         <small>${skill.type === 'combat' ? 'Боевое искусство' : 'Магия'}</small>
                     </div>
@@ -125,12 +173,23 @@ class CombatSkillsManager {
         }
 
         this.clickHandler = (e) => {
-            if (e.target.closest('#add-combat-skill-btn')) {
+            // Обработка кнопок фильтров
+            if (e.target.closest('.filter-btn')) {
+                const btn = e.target.closest('.filter-btn');
+                const filter = btn.dataset.filter;
+                this.setFilter(filter);
+            }
+            // Добавление навыка
+            else if (e.target.closest('#add-combat-skill-btn')) {
                 this.showSkillModal();
-            } else if (e.target.closest('.edit-combat-skill')) {
+            }
+            // Редактирование навыка
+            else if (e.target.closest('.edit-combat-skill')) {
                 const index = parseInt(e.target.closest('.list-item').dataset.index);
                 this.showSkillModal(index);
-            } else if (e.target.closest('.remove-combat-skill')) {
+            }
+            // Удаление навыка
+            else if (e.target.closest('.remove-combat-skill')) {
                 e.preventDefault();
                 e.stopPropagation();
                 const button = e.target.closest('.remove-combat-skill');
@@ -141,11 +200,23 @@ class CombatSkillsManager {
                 } else {
                     button.disabled = false;
                 }
-            } else if (e.target.closest('.range-info-btn')) {
+            }
+            // Переключение активного статуса навыка
+            else if (e.target.closest('.skill-active-toggle')) {
+                e.preventDefault();
+                e.stopPropagation();
+                const checkbox = e.target.closest('.skill-active-toggle');
+                const index = parseInt(checkbox.dataset.index);
+                this.toggleSkillActive(index, checkbox.checked);
+            }
+            // Информация о дальности
+            else if (e.target.closest('.range-info-btn')) {
                 e.preventDefault();
                 e.stopPropagation();
                 this.showRangeTable();
-            } else if (e.target.closest('.duration-info-btn')) {
+            }
+            // Информация о длительности
+            else if (e.target.closest('.duration-info-btn')) {
                 e.preventDefault();
                 e.stopPropagation();
                 this.showDurationTable();
@@ -154,7 +225,20 @@ class CombatSkillsManager {
 
         block.addEventListener('click', this.clickHandler);
     }
-    
+
+    setFilter(filter) {
+        this.activeFilter = filter;
+        this.renderBlock();
+    }
+
+    toggleSkillActive(index, isActive) {
+        if (characterSheet.state.combatSkills[index]) {
+            characterSheet.state.combatSkills[index].isActive = isActive;
+            characterSheet.saveState();
+            this.renderBlock();
+        }
+    }
+
     showSkillModal(skillIndex = null) {
         const skill = skillIndex !== null ? 
             characterSheet.state.combatSkills[skillIndex] : 
@@ -254,6 +338,7 @@ class CombatSkillsManager {
                         <label for="magic-duration">Длительность</label>
                         <div style="display: flex; gap: 8px; align-items: center;">
                             <select id="magic-duration" class="form-control" style="flex-grow: 1;">
+                                <option value="" ${skill?.duration === '' || !skill?.duration ? 'selected' : ''}>-</option>
                                 <option value="Концентрация" ${skill?.duration === 'Концентрация' ? 'selected' : ''}>Концентрация</option>
                                 <option value="Краткая" ${skill?.duration === 'Краткая' ? 'selected' : ''}>Краткая</option>
                                 <option value="Сцена" ${skill?.duration === 'Сцена' ? 'selected' : ''}>Сцена</option>
@@ -281,6 +366,13 @@ class CombatSkillsManager {
                 <div class="form-group">
                     <label for="skill-description">Описание</label>
                     <textarea id="skill-description" class="form-control" rows="3">${skill?.description || ''}</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="active-skill-toggle-label" style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                        <input type="checkbox" id="skill-is-active" ${skill?.isActive ? 'checked' : ''}>
+                        <span>Активный навык</span>
+                    </label>
                 </div>
             </form>
         `;
@@ -419,14 +511,15 @@ class CombatSkillsManager {
     saveSkill(skillIndex = null) {
         const form = document.getElementById('combat-skill-form');
         if (!form) return;
-        
+
         const type = document.getElementById('skill-type').value;
         let skillData = {
             name: document.getElementById('skill-name').value,
             type: type,
-            description: document.getElementById('skill-description').value
+            description: document.getElementById('skill-description').value,
+            isActive: document.getElementById('skill-is-active').checked
         };
-        
+
         if (type === 'combat') {
             skillData.soulCost = parseInt(document.getElementById('combat-soul-cost').value) || 0;
             skillData.enduranceCost = parseInt(document.getElementById('combat-endurance-cost').value) || 0;
@@ -441,13 +534,13 @@ class CombatSkillsManager {
             skillData.duration = document.getElementById('magic-duration').value;
             skillData.attackChar = document.getElementById('magic-attack-char').value;
         }
-        
+
         if (skillIndex !== null) {
             characterSheet.state.combatSkills[skillIndex] = skillData;
         } else {
             characterSheet.state.combatSkills.push(skillData);
         }
-        
+
         characterSheet.saveState();
         this.renderBlock();
         
