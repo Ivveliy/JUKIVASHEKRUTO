@@ -18,12 +18,13 @@ class TraitsManager {
         if (!content) return;
 
         content.innerHTML = `
+            <button class="add-btn" id="add-trait-btn" style="margin-bottom: 15px;">
+                <i class="fas fa-plus"></i> Добавить черту
+            </button>
+            
             <div class="traits-list">
                 ${this.renderTraitsList()}
             </div>
-            <button class="add-btn" id="add-trait-btn">
-                <i class="fas fa-plus"></i> Добавить черту
-            </button>
         `;
     }
     

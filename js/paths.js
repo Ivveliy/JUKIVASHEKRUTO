@@ -12,16 +12,17 @@ class PathsManager {
     renderBlock() {
         const content = document.getElementById('content-paths');
         if (!content) return;
-        
+
         content.innerHTML = `
+            <button class="add-btn" id="add-path-btn" style="margin-bottom: 15px;">
+                <i class="fas fa-plus"></i> Добавить путь
+            </button>
+            
             <div class="paths-list">
                 ${this.renderPathsList()}
             </div>
-            <button class="add-btn" id="add-path-btn">
-                <i class="fas fa-plus"></i> Добавить путь
-            </button>
         `;
-        
+
         this.setupEventListeners();
     }
     
@@ -268,8 +269,14 @@ class PathsManager {
         
         characterSheet.saveState();
         characterSheet.updateAllCharacteristics();
-        this.renderBlock();
         
+        // Обновляем слоты амулетов при изменении рангов путей
+        if (window.updateCharmSlotsFromPaths) {
+            window.updateCharmSlotsFromPaths();
+        }
+        
+        this.renderBlock();
+
         document.querySelector('.modal.active')?.remove();
     }
     
@@ -278,6 +285,12 @@ class PathsManager {
             characterSheet.state.paths.splice(index, 1);
             characterSheet.saveState();
             characterSheet.updateAllCharacteristics();
+            
+            // Обновляем слоты амулетов при удалении пути
+            if (window.updateCharmSlotsFromPaths) {
+                window.updateCharmSlotsFromPaths();
+            }
+            
             this.renderBlock();
         } else {
             button.disabled = false;

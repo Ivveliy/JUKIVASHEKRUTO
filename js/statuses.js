@@ -14,12 +14,13 @@ class StatusesManager {
         if (!content) return;
 
         content.innerHTML = `
+            <button class="add-btn" id="add-status-btn" style="margin-bottom: 15px;">
+                <i class="fas fa-plus"></i> Добавить статус
+            </button>
+            
             <div class="statuses-list">
                 ${this.renderStatusesList()}
             </div>
-            <button class="add-btn" id="add-status-btn">
-                <i class="fas fa-plus"></i> Добавить статус
-            </button>
         `;
     }
     

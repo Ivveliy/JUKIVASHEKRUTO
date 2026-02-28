@@ -1,7 +1,7 @@
 // combatSkills.js - Блок боевых навыков
 class CombatSkillsManager {
     constructor() {
-        this.activeFilter = 'all'; // 'all', 'combat', 'magic', 'active'
+        this.activeFilter = 'all'; // 'all', 'combat', 'magic', 'active', 'ritual'
         this.init();
     }
 
@@ -14,6 +14,10 @@ class CombatSkillsManager {
         if (!content) return;
 
         content.innerHTML = `
+            <button class="add-btn" id="add-combat-skill-btn" style="margin-bottom: 15px;">
+                <i class="fas fa-plus"></i> Добавить навык
+            </button>
+            
             <div class="combat-skills-filters">
                 <button class="filter-btn ${this.activeFilter === 'all' ? 'active' : ''}" data-filter="all">
                     Все
@@ -24,6 +28,9 @@ class CombatSkillsManager {
                 <button class="filter-btn ${this.activeFilter === 'magic' ? 'active' : ''}" data-filter="magic">
                     <i class="fas fa-magic"></i> Магия
                 </button>
+                <button class="filter-btn ${this.activeFilter === 'ritual' ? 'active' : ''}" data-filter="ritual">
+                    <i class="fas fa-book-dead"></i> Ритуалы
+                </button>
                 <button class="filter-btn ${this.activeFilter === 'active' ? 'active' : ''}" data-filter="active">
                     <i class="fas fa-check-circle"></i> Активные
                 </button>
@@ -31,9 +38,6 @@ class CombatSkillsManager {
             <div class="combat-skills-list">
                 ${this.renderSkillsList()}
             </div>
-            <button class="add-btn" id="add-combat-skill-btn">
-                <i class="fas fa-plus"></i> Добавить боевой навык
-            </button>
         `;
 
         this.setupEventListeners();
@@ -58,8 +62,11 @@ class CombatSkillsManager {
             filteredSkills = filteredSkills.filter(skill => skill.type === 'combat');
         } else if (this.activeFilter === 'magic') {
             filteredSkills = filteredSkills.filter(skill => skill.type === 'magic');
+        } else if (this.activeFilter === 'ritual') {
+            filteredSkills = filteredSkills.filter(skill => skill.type === 'ritual');
         } else if (this.activeFilter === 'active') {
-            filteredSkills = filteredSkills.filter(skill => skill.isActive);
+            // Активные навыки - только боевые искусства и магия (не ритуалы)
+            filteredSkills = filteredSkills.filter(skill => skill.isActive && skill.type !== 'ritual');
         }
 
         if (filteredSkills.length === 0) {
@@ -69,6 +76,7 @@ class CombatSkillsManager {
         // Разделяем навыки по типам для отображения
         const combatArts = filteredSkills.filter(skill => skill.type === 'combat');
         const magic = filteredSkills.filter(skill => skill.type === 'magic');
+        const rituals = filteredSkills.filter(skill => skill.type === 'ritual');
 
         let html = '';
 
@@ -80,6 +88,11 @@ class CombatSkillsManager {
         if (magic.length > 0) {
             html += `<h4 style="margin-top: 20px;">Магия</h4>`;
             html += magic.map((skill) => this.renderSkillItem(skill)).join('');
+        }
+
+        if (rituals.length > 0) {
+            html += `<h4 style="margin-top: 20px;">Ритуалы</h4>`;
+            html += rituals.map((skill) => this.renderSkillItem(skill)).join('');
         }
 
         return html;
@@ -124,23 +137,31 @@ class CombatSkillsManager {
                     </div>
                 ` : ''}
             `;
+        } else if (skill.type === 'ritual') {
+            details = `
+                <div><small>Стоимость: ${skill.cost || 'Не указана'}</small></div>
+                ${skill.requirements ? `<div><small>Требования: ${skill.requirements}</small></div>` : ''}
+                ${skill.castTime ? `<div><small>Время каста: ${skill.castTime}</small></div>` : ''}
+            `;
         }
 
         return `
             <div class="list-item" data-index="${index}">
                 <div>
                     <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
-                        <label class="active-skill-checkbox" title="Отметить как активный">
-                            <input type="checkbox" class="skill-active-toggle" ${skill.isActive ? 'checked' : ''} data-index="${index}">
-                            <i class="fas ${skill.isActive ? 'fa-check-circle' : 'fa-times-circle'}"></i>
-                        </label>
+                        ${skill.type !== 'ritual' ? `
+                            <label class="active-skill-checkbox" title="Отметить как активный">
+                                <input type="checkbox" class="skill-active-toggle" ${skill.isActive ? 'checked' : ''} data-index="${index}">
+                                <i class="fas ${skill.isActive ? 'fa-check-circle' : 'fa-times-circle'}"></i>
+                            </label>
+                        ` : ''}
                         <strong>${skill.name}</strong>
                     </div>
                     <div class="skill-type">
-                        <small>${skill.type === 'combat' ? 'Боевое искусство' : 'Магия'}</small>
+                        <small>${this.getSkillTypeName(skill.type)}</small>
                     </div>
                     ${details}
-                    ${skill.description ? `<div><small>${skill.description}</small></div>` : ''}
+                    ${skill.description ? `<div class="ritual-description" style="margin-top: 8px; white-space: pre-wrap; background: var(--light-bg); padding: 8px; border-radius: 4px;"><small>${skill.description}</small></div>` : ''}
                 </div>
                 <div class="list-item-controls">
                     <button class="edit-combat-skill" title="Редактировать">
@@ -152,6 +173,15 @@ class CombatSkillsManager {
                 </div>
             </div>
         `;
+    }
+
+    getSkillTypeName(type) {
+        const names = {
+            combat: 'Боевое искусство',
+            magic: 'Магия',
+            ritual: 'Ритуал'
+        };
+        return names[type] || type;
     }
     
     getCharacteristicName(key) {
@@ -232,8 +262,10 @@ class CombatSkillsManager {
     }
 
     toggleSkillActive(index, isActive) {
-        if (characterSheet.state.combatSkills[index]) {
-            characterSheet.state.combatSkills[index].isActive = isActive;
+        const skill = characterSheet.state.combatSkills[index];
+        // Ритуалы не могут быть активными навыками
+        if (skill && skill.type !== 'ritual') {
+            skill.isActive = isActive;
             characterSheet.saveState();
             this.renderBlock();
         }
@@ -261,6 +293,7 @@ class CombatSkillsManager {
                     <select id="skill-type" class="form-control" required>
                         <option value="combat" ${skill?.type === 'combat' ? 'selected' : ''}>Боевое искусство</option>
                         <option value="magic" ${skill?.type === 'magic' ? 'selected' : ''}>Магия</option>
+                        <option value="ritual" ${skill?.type === 'ritual' ? 'selected' : ''}>Ритуал</option>
                     </select>
                 </div>
                 
@@ -362,23 +395,48 @@ class CombatSkillsManager {
                         </select>
                     </div>
                 </div>
-                
-                <div class="form-group">
-                    <label for="skill-description">Описание</label>
-                    <textarea id="skill-description" class="form-control" rows="3">${skill?.description || ''}</textarea>
+
+                <!-- Поля для ритуалов -->
+                <div id="ritual-fields" style="display: ${skill?.type === 'ritual' ? 'block' : 'none'}">
+                    <div class="form-group">
+                        <label for="ritual-cost">Стоимость</label>
+                        <input type="text" id="ritual-cost" class="form-control" value="${skill?.cost || ''}" placeholder="Ресурсы и материальные компоненты">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="ritual-requirements">Требования</label>
+                        <input type="text" id="ritual-requirements" class="form-control" value="${skill?.requirements || ''}" placeholder="Уровни и место проведения">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="ritual-cast-time">Время каста</label>
+                        <input type="text" id="ritual-cast-time" class="form-control" value="${skill?.castTime || ''}" placeholder="Раунды, сцены, иные единицы времени">
+                    </div>
                 </div>
 
+                <div class="form-group">
+                    <label for="skill-description">Описание</label>
+                    <textarea id="skill-description" class="form-control" rows="5" style="white-space: pre-wrap; font-family: monospace;">${skill?.description || ''}</textarea>
+                    <small style="color: #666; display: block; margin-top: 5px;">Описание поддерживает переносы строк и абзацы</small>
+                </div>
+
+                ${skill?.type !== 'ritual' ? `
                 <div class="form-group">
                     <label class="active-skill-toggle-label" style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
                         <input type="checkbox" id="skill-is-active" ${skill?.isActive ? 'checked' : ''}>
                         <span>Активный навык</span>
                     </label>
                 </div>
+                ` : ''}
             </form>
         `;
         
+        const skillType = skill?.type === 'ritual' ? 'навык (ритуал)' : 
+                          skill?.type === 'magic' ? 'навык (магия)' : 
+                          skill?.type === 'combat' ? 'навык (боевое искусство)' : 'навык';
+        
         const modal = this.createModal(
-            skillIndex !== null ? 'Редактировать боевой навык' : 'Добавить боевой навык',
+            skillIndex !== null ? `Редактировать ${skillType}` : `Добавить ${skillType}`,
             modalContent,
             () => this.saveSkill(skillIndex)
         );
@@ -412,9 +470,14 @@ class CombatSkillsManager {
     updateSkillFields(type) {
         const combatFields = document.getElementById('combat-fields');
         const magicFields = document.getElementById('magic-fields');
+        const ritualFields = document.getElementById('ritual-fields');
+        const activeCheckbox = document.querySelector('.active-skill-toggle-label').closest('.form-group');
 
         if (combatFields) combatFields.style.display = type === 'combat' ? 'block' : 'none';
         if (magicFields) magicFields.style.display = type === 'magic' ? 'block' : 'none';
+        if (ritualFields) ritualFields.style.display = type === 'ritual' ? 'block' : 'none';
+        // Скрываем чекбокс "Активный навык" для ритуалов
+        if (activeCheckbox) activeCheckbox.style.display = type === 'ritual' ? 'none' : 'block';
     }
 
     showRangeTable() {
@@ -516,9 +579,15 @@ class CombatSkillsManager {
         let skillData = {
             name: document.getElementById('skill-name').value,
             type: type,
-            description: document.getElementById('skill-description').value,
-            isActive: document.getElementById('skill-is-active').checked
+            description: document.getElementById('skill-description').value
         };
+
+        // Активный навык только для боевых искусств и магии
+        if (type !== 'ritual') {
+            skillData.isActive = document.getElementById('skill-is-active').checked;
+        } else {
+            skillData.isActive = false;
+        }
 
         if (type === 'combat') {
             skillData.soulCost = parseInt(document.getElementById('combat-soul-cost').value) || 0;
@@ -533,6 +602,10 @@ class CombatSkillsManager {
             skillData.range = document.getElementById('magic-range').value;
             skillData.duration = document.getElementById('magic-duration').value;
             skillData.attackChar = document.getElementById('magic-attack-char').value;
+        } else if (type === 'ritual') {
+            skillData.cost = document.getElementById('ritual-cost').value;
+            skillData.requirements = document.getElementById('ritual-requirements').value;
+            skillData.castTime = document.getElementById('ritual-cast-time').value;
         }
 
         if (skillIndex !== null) {
@@ -543,7 +616,7 @@ class CombatSkillsManager {
 
         characterSheet.saveState();
         this.renderBlock();
-        
+
         document.querySelector('.modal.active')?.remove();
     }
     

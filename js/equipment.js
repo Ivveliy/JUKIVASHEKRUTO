@@ -15,6 +15,10 @@ class EquipmentManager {
         if (!content) return;
 
         content.innerHTML = `
+            <button class="add-btn" id="add-equipment-btn" style="margin-bottom: 15px;">
+                <i class="fas fa-plus"></i> Добавить снаряжение
+            </button>
+            
             <div class="load-container">
                 <h3><i class="fas fa-weight-hanging"></i> Нагрузка</h3>
                 ${this.renderLoadDisplay()}
@@ -23,55 +27,61 @@ class EquipmentManager {
             <div class="equipment-categories">
                 ${this.renderEquipmentCategories()}
             </div>
-
-            <button class="add-btn" id="add-equipment-btn">
-                <i class="fas fa-plus"></i> Добавить снаряжение
-            </button>
         `;
     }
     
     renderLoadDisplay() {
         const load = characterSheet.calculateLoad();
         const percentage = load.max > 0 ? (load.current / load.max) * 100 : 0;
-        
-        // Get base might and load modifier for display
+
         const baseMight = characterSheet.state.characteristics.base.might;
         const loadModifier = characterSheet.state.characteristics.modifiers.load || 0;
         const loadAdjustment = characterSheet.state.loadAdjustment || 0;
-        
+        const maxLoad = baseMight + loadModifier + loadAdjustment;
+
         return `
             <div class="characteristic">
-                <span class="char-name">Нагрузка (вес/макс)</span>
+                <span class="char-name">Текущая нагрузка</span>
                 <div class="char-value">
-                    <span>${load.current} / ${load.max}</span>
+                    <span>${load.current} / ${maxLoad}</span>
                 </div>
             </div>
+
+            <div class="characteristic">
+                <span class="char-name">Максимальная нагрузка</span>
+                <div class="char-value">
+                    <input type="number" step="0.5" id="max-load-input" class="form-control" style="width: 80px;"
+                           value="${maxLoad}" min="0">
+                </div>
+            </div>
+
             <div class="load-bar">
                 <div class="load-fill" id="load-fill" style="width: ${percentage}%"></div>
-                <div class="load-text">${load.current}/${load.max}</div>
+                <div class="load-text">${load.current}/${maxLoad}</div>
             </div>
-            <div class="load-details">
-                <small>Осталось места: ${load.remaining}</small>
-                <div style="margin-top: 8px; padding: 8px; background-color: var(--light-bg); border-radius: 4px; font-size: 0.85em;">
-                    <strong>Расчет максимальной нагрузки:</strong><br>
-                    Мощь: ${baseMight} 
-                    ${loadModifier !== 0 ? `<span style="color: ${loadModifier > 0 ? 'var(--accent-green)' : 'var(--accent-red)'};">${loadModifier > 0 ? '+' : ''}${loadModifier} (черты/амулеты/статусы)</span>` : ''}
-                    ${loadAdjustment !== 0 ? ` + <span style="color: var(--accent-blue);">${loadAdjustment > 0 ? '+' : ''}${loadAdjustment} (ручн.)</span>` : ''}
-                    = <strong>${load.max}</strong>
+
+            <div class="load-sources" style="margin-top: 10px; padding: 10px; background-color: var(--light-bg); border-radius: var(--radius); font-size: 0.9em;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <span><i class="fas fa-chart-bar"></i> Мощь:</span>
+                    <span>${baseMight}</span>
                 </div>
-            </div>
-            <div style="margin-top: 15px; padding: 10px; background-color: var(--light-bg); border-radius: var(--radius);">
-                <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
-                    <span><i class="fas fa-edit"></i> Ручная корректировка МАКСИМАЛЬНОЙ нагрузки:</span>
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <button type="button" class="char-btn char-minus" id="load-adjust-minus">-</button>
-                        <input type="number" step="0.5" id="load-adjustment-input" class="form-control" style="width: 70px; text-align: center;" value="${loadAdjustment}">
-                        <button type="button" class="char-btn char-plus" id="load-adjust-plus">+</button>
+                ${loadModifier !== 0 ? `
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span><i class="fas fa-plus-circle"></i> Черты/амулеты/статусы:</span>
+                        <span style="color: ${loadModifier > 0 ? 'var(--accent-green)' : 'var(--accent-red)'};">${loadModifier > 0 ? '+' : ''}${loadModifier}</span>
                     </div>
-                </label>
-                <small style="color: #666; display: block; margin-top: 5px;">
-                    Вес снаряжения: ${load.current}
-                </small>
+                ` : ''}
+                ${loadAdjustment !== 0 ? `
+                    <div style="display: flex; justify-content: space-between;">
+                        <span><i class="fas fa-edit"></i> Корректировка:</span>
+                        <span style="color: var(--accent-blue);">${loadAdjustment > 0 ? '+' : ''}${loadAdjustment}</span>
+                    </div>
+                ` : ''}
+            </div>
+
+            <div style="margin-top: 10px; font-size: 0.9em;">
+                <small>Осталось места: ${load.remaining}</small><br>
+                <small>Вес снаряжения: ${load.current}</small>
             </div>
         `;
     }
@@ -209,36 +219,23 @@ class EquipmentManager {
                         btn.title = 'Показать модификации';
                     }
                 }
-            } else if (e.target.closest('#load-adjust-minus')) {
-                this.adjustLoad(-0.5);
-            } else if (e.target.closest('#load-adjust-plus')) {
-                this.adjustLoad(0.5);
             }
         });
-        
-        // Обработчик для прямого ввода значения нагрузки
+
+        // Обработчик для изменения максимальной нагрузки
         document.addEventListener('change', (e) => {
-            if (e.target.id === 'load-adjustment-input') {
-                const value = parseFloat(e.target.value) || 0;
-                characterSheet.setLoadAdjustment(value);
-            }
-        });
-        
-        // Обработчик для ввода с клавиатуры
-        document.addEventListener('input', (e) => {
-            if (e.target.id === 'load-adjustment-input') {
-                const value = parseFloat(e.target.value) || 0;
-                characterSheet.state.loadAdjustment = value;
+            if (e.target.id === 'max-load-input') {
+                const newMaxLoad = parseFloat(e.target.value) || 0;
+                const baseMight = characterSheet.state.characteristics.base.might;
+                const loadModifier = characterSheet.state.characteristics.modifiers.load || 0;
+                // Сохраняем только ручную корректировку
+                characterSheet.state.loadAdjustment = newMaxLoad - baseMight - loadModifier;
+                characterSheet.saveState();
+                this.updateLoadDisplay();
             }
         });
     }
-    
-    adjustLoad(amount) {
-        const currentAdjustment = characterSheet.state.loadAdjustment || 0;
-        const newAdjustment = currentAdjustment + amount;
-        characterSheet.setLoadAdjustment(newAdjustment);
-    }
-    
+
     showEquipmentModal(equipmentIndex = null) {
         const equipment = equipmentIndex !== null ? 
             characterSheet.state.equipment[equipmentIndex] : 
@@ -396,7 +393,7 @@ class EquipmentManager {
         if (loadContainer) {
             const loadDisplay = this.renderLoadDisplay();
             loadContainer.innerHTML = `<h3><i class="fas fa-weight-hanging"></i> Нагрузка</h3>${loadDisplay}`;
-            
+
             // Обновляем цвет индикатора нагрузки
             const load = characterSheet.calculateLoad();
             const percentage = load.max > 0 ? (load.current / load.max) * 100 : 0;
@@ -411,6 +408,17 @@ class EquipmentManager {
                     loadFill.style.backgroundColor = 'var(--accent-blue)';
                 }
             }
+
+            // Обновляем обработчик изменения максимальной нагрузки
+            document.getElementById('max-load-input')?.addEventListener('change', (e) => {
+                const newMaxLoad = parseFloat(e.target.value) || 0;
+                const baseMight = characterSheet.state.characteristics.base.might;
+                const loadModifier = characterSheet.state.characteristics.modifiers.load || 0;
+                // Сохраняем только ручную корректировку
+                characterSheet.state.loadAdjustment = newMaxLoad - baseMight - loadModifier;
+                characterSheet.saveState();
+                this.updateLoadDisplay();
+            });
         }
     }
     

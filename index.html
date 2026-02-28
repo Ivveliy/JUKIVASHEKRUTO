@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hollow Knight RPG - Лист персонажа</title>
+    <link rel="icon" href="icon.png" type="image/png">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
@@ -16,6 +17,7 @@
                 <input type="text" id="character-name" placeholder="Имя персонажа">
             </div>
             <div class="header-controls">
+                <button id="centerActionsBtn" class="btn" title="Центрировать меню действий"><i class="fas fa-compress-arrows-alt"></i> Действия</button>
                 <button id="exportBtn" class="btn"><i class="fas fa-download"></i> Экспорт JSON</button>
                 <button id="importBtn" class="btn"><i class="fas fa-upload"></i> Импорт JSON</button>
                 <input type="file" id="importFile" accept=".json" style="display: none;">

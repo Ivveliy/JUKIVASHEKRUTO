@@ -9,6 +9,13 @@ class CharmsManager {
         this.renderBlock();
         this.setupEventListeners();
         window.updateCharmsDisplay = () => this.updateSlotsDisplay();
+        window.updateCharmSlotsFromPaths = () => {
+            this.renderBlock();
+        };
+    }
+
+    getPathRanksBonus() {
+        return characterSheet.state.paths.reduce((sum, path) => sum + (path.rank || 0), 0);
     }
 
     renderBlock() {
@@ -16,6 +23,10 @@ class CharmsManager {
         if (!content) return;
 
         content.innerHTML = `
+            <button class="add-btn" id="add-charm-btn" style="margin-bottom: 15px;">
+                <i class="fas fa-plus"></i> Добавить амулет
+            </button>
+            
             <div class="charm-slots-container">
                 <h3 style="display: flex; align-items: center; gap: 10px;">
                     <i class="fas fa-sliders-h"></i>
@@ -36,10 +47,6 @@ class CharmsManager {
                 <h4>Не надетые амулеты</h4>
                 ${this.renderCharmsList(false)}
             </div>
-
-            <button class="add-btn" id="add-charm-btn">
-                <i class="fas fa-plus"></i> Добавить амулет
-            </button>
         `;
     }
     
@@ -47,7 +54,10 @@ class CharmsManager {
         const equippedSlots = characterSheet.state.charms
             .filter(charm => charm.equipped)
             .reduce((sum, charm) => sum + (charm.slots || 1), 0);
-        const totalSlots = characterSheet.state.charmSlots;
+        const baseSlots = 3;
+        const pathRanksBonus = this.getPathRanksBonus();
+        const manualAdjustment = characterSheet.state.charmSlots || 0;
+        const totalSlots = baseSlots + pathRanksBonus + manualAdjustment;
 
         return `
             <div class="characteristic">
@@ -63,6 +73,25 @@ class CharmsManager {
                     <input type="number" id="charm-slots-input" class="form-control" style="width: 80px;"
                            value="${totalSlots}" min="1">
                 </div>
+            </div>
+
+            <div class="charm-sources" style="margin-top: 10px; padding: 10px; background-color: var(--light-bg); border-radius: var(--radius); font-size: 0.9em;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <span><i class="fas fa-book"></i> Базовое значение:</span>
+                    <span>${baseSlots}</span>
+                </div>
+                ${pathRanksBonus > 0 ? `
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span><i class="fas fa-road"></i> Ранги путей:</span>
+                        <span>+${pathRanksBonus}</span>
+                    </div>
+                ` : ''}
+                ${manualAdjustment !== 0 ? `
+                    <div style="display: flex; justify-content: space-between;">
+                        <span><i class="fas fa-edit"></i> Корректировка:</span>
+                        <span>${manualAdjustment > 0 ? '+' : ''}${manualAdjustment}</span>
+                    </div>
+                ` : ''}
             </div>
 
             <div class="charm-slots">
@@ -212,8 +241,11 @@ class CharmsManager {
         // Изменение количества слотов
         document.addEventListener('change', (e) => {
             if (e.target.id === 'charm-slots-input') {
-                const slots = parseInt(e.target.value) || 3;
-                characterSheet.state.charmSlots = Math.max(1, slots);
+                const newTotal = parseInt(e.target.value) || 3;
+                const baseSlots = 3;
+                const pathRanksBonus = this.getPathRanksBonus();
+                // Сохраняем только ручную корректировку
+                characterSheet.state.charmSlots = newTotal - baseSlots - pathRanksBonus;
                 characterSheet.saveState();
                 this.updateSlotsDisplay();
             }
@@ -409,10 +441,13 @@ class CharmsManager {
             .filter(c => c.equipped)
             .reduce((sum, c) => sum + (c.slots || 1), 0);
         const charmSlots = charm.slots || 1;
+        
+        // Вычисляем общее количество слотов
+        const totalSlots = 3 + this.getPathRanksBonus() + (characterSheet.state.charmSlots || 0);
 
         if (equip) {
             // Проверяем, хватает ли слотов для надевания
-            const availableSlots = characterSheet.state.charmSlots - currentEquippedSlots;
+            const availableSlots = totalSlots - currentEquippedSlots;
             if (charmSlots > availableSlots) {
                 // ПЕРЕЧАРОВАН - разрешаем надевание, но показываем уведомление
                 alert(`ПЕРЕЧАРОВАН. Получаемый урон удвоен`);
@@ -420,14 +455,14 @@ class CharmsManager {
         }
 
         charm.equipped = equip;
-        
+
         // Проверяем общее состояние перечарованности после изменения
         const totalEquippedSlots = characterSheet.state.charms
             .filter(c => c.equipped)
             .reduce((sum, c) => sum + (c.slots || 1), 0);
-        
+
         // Устанавливаем статус перечарованности
-        characterSheet.state.isOvercharmed = totalEquippedSlots > characterSheet.state.charmSlots;
+        characterSheet.state.isOvercharmed = totalEquippedSlots > totalSlots;
 
         characterSheet.saveState();
         characterSheet.updateAllCharacteristics();
@@ -462,11 +497,14 @@ class CharmsManager {
         const slotsContainer = document.querySelector('.charm-slots-container');
         if (slotsContainer) {
             slotsContainer.innerHTML = `<h3><i class="fas fa-sliders-h"></i> Слоты для амулетов</h3>${this.renderSlotsDisplay()}`;
-            
+
             // Обновляем обработчик изменения слотов
             document.getElementById('charm-slots-input')?.addEventListener('change', (e) => {
-                const slots = parseInt(e.target.value) || 3;
-                characterSheet.state.charmSlots = Math.max(1, slots);
+                const newTotal = parseInt(e.target.value) || 3;
+                const baseSlots = 3;
+                const pathRanksBonus = this.getPathRanksBonus();
+                // Сохраняем только ручную корректировку
+                characterSheet.state.charmSlots = newTotal - baseSlots - pathRanksBonus;
                 characterSheet.saveState();
                 this.updateSlotsDisplay();
             });

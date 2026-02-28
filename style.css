@@ -840,6 +840,27 @@ body {
     cursor: pointer;
 }
 
+.actions-header h3 {
+    margin: 0;
+}
+
+.toggle-panel {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.2s ease;
+}
+
+.toggle-panel:hover {
+    opacity: 0.8;
+}
+
 .actions-content {
     padding: 15px;
     display: flex;
@@ -1261,6 +1282,10 @@ body {
     .actions-header {
         padding: 10px 15px;
         cursor: pointer;
+    }
+
+    .actions-header .toggle-panel {
+        display: none;
     }
 
     .actions-content {

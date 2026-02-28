@@ -11,7 +11,7 @@ class CharacterSheet {
             combatSkills: [],
             paths: [],
             charms: [],
-            charmSlots: 3,
+            charmSlots: 0, // Ручная корректировка количества слотов (по умолчанию 0)
             blockOrder: ['characteristics', 'statuses', 'traits', 'equipment',
                        'nonCombatSkills', 'combatSkills', 'paths', 'charms'],
             collapsedBlocks: {},
@@ -218,6 +218,11 @@ class CharacterSheet {
                 this.importFromJSON(e.target.files[0]);
                 e.target.value = ''; // Сбрасываем input
             }
+        });
+
+        // Кнопка центрирования меню действий
+        document.getElementById('centerActionsBtn')?.addEventListener('click', () => {
+            this.centerActionsPanel();
         });
 
         // Обработчик изменения имени персонажа
@@ -536,15 +541,6 @@ class CharacterSheet {
         };
     }
 
-    // Установка ручной корректировки максимальной нагрузки
-    setLoadAdjustment(value) {
-        this.state.loadAdjustment = parseFloat(value) || 0;
-        this.saveState();
-        if (window.updateEquipmentDisplay) {
-            window.updateEquipmentDisplay();
-        }
-    }
-
     // Изменение характеристик
     changeCharacteristic(button, amount) {
         const charName = button.dataset.char;
@@ -672,7 +668,8 @@ class CharacterSheet {
         let isDragging = false;
         let startX, startY, startLeft, startTop;
 
-        panel.addEventListener('mousedown', (e) => {
+        // Обработчик mousedown на панели
+        const mouseDownHandler = (e) => {
             if (e.target.closest('.action-btn') || e.target.closest('.toggle-panel')) return;
 
             isDragging = true;
@@ -685,9 +682,10 @@ class CharacterSheet {
 
             panel.style.cursor = 'grabbing';
             e.preventDefault();
-        });
+        };
 
-        document.addEventListener('mousemove', (e) => {
+        // Обработчик mousemove на документе
+        const mouseMoveHandler = (e) => {
             if (!isDragging) return;
 
             const deltaX = e.clientX - startX;
@@ -702,9 +700,10 @@ class CharacterSheet {
 
             panel.style.left = Math.max(0, Math.min(newLeft, maxLeft)) + 'px';
             panel.style.top = Math.max(0, Math.min(newTop, maxTop)) + 'px';
-        });
+        };
 
-        document.addEventListener('mouseup', () => {
+        // Обработчик mouseup на документе
+        const mouseUpHandler = () => {
             if (isDragging) {
                 isDragging = false;
                 panel.style.cursor = 'move';
@@ -715,7 +714,27 @@ class CharacterSheet {
                 this.state.actionsPanelPosition.y = rect.top;
                 this.saveState();
             }
-        });
+        };
+
+        // Сохраняем ссылки на обработчики для возможного удаления
+        if (!this.actionsPanelMouseHandlers) {
+            this.actionsPanelMouseHandlers = [];
+        }
+
+        // Удаляем старые обработчики если они есть
+        if (this.actionsPanelMouseHandlers.length > 0) {
+            const [oldMouseDown, oldMouseMove, oldMouseUp] = this.actionsPanelMouseHandlers;
+            panel.removeEventListener('mousedown', oldMouseDown);
+            document.removeEventListener('mousemove', oldMouseMove);
+            document.removeEventListener('mouseup', oldMouseUp);
+        }
+
+        // Добавляем новые обработчики
+        panel.addEventListener('mousedown', mouseDownHandler);
+        document.addEventListener('mousemove', mouseMoveHandler);
+        document.addEventListener('mouseup', mouseUpHandler);
+
+        this.actionsPanelMouseHandlers = [mouseDownHandler, mouseMoveHandler, mouseUpHandler];
     }
 
     applyActionsPanelPosition() {
@@ -729,6 +748,28 @@ class CharacterSheet {
             panel.style.left = this.state.actionsPanelPosition.x + 'px';
             panel.style.top = this.state.actionsPanelPosition.y + 'px';
         }
+    }
+
+    centerActionsPanel() {
+        const panel = document.getElementById('actionsPanel');
+        if (!panel) return;
+
+        // Центрируем панель по центру окна
+        const panelWidth = panel.offsetWidth;
+        const panelHeight = panel.offsetHeight;
+        const centerX = (window.innerWidth - panelWidth) / 2;
+        const centerY = (window.innerHeight - panelHeight) / 2;
+
+        panel.style.left = Math.max(0, centerX) + 'px';
+        panel.style.top = Math.max(0, centerY) + 'px';
+
+        // Сохраняем позицию
+        this.state.actionsPanelPosition.x = panel.offsetLeft;
+        this.state.actionsPanelPosition.y = panel.offsetTop;
+        this.saveState();
+        
+        // Пересоздаем обработчик перетаскивания
+        this.setupActionsPanelDrag();
     }
 
     restoreActionsPanelState() {

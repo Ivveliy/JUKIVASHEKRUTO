@@ -16,12 +16,13 @@ class NonCombatSkillsManager {
         if (!content) return;
 
         content.innerHTML = `
+            <button class="add-btn" id="add-skill-btn" style="margin-bottom: 15px;">
+                <i class="fas fa-plus"></i> Добавить навык
+            </button>
+            
             <div class="skills-list">
                 ${this.renderSkillsList()}
             </div>
-            <button class="add-btn" id="add-skill-btn">
-                <i class="fas fa-plus"></i> Добавить навык
-            </button>
         `;
 
         this.setupEventListeners();
