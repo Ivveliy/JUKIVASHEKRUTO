@@ -476,10 +476,10 @@ class CharmsManager {
 
         if (desc) {
             const isHidden = desc.classList.contains('hidden');
-            
+
             if (isHidden) {
                 desc.classList.remove('hidden');
-                desc.style.maxHeight = (desc.scrollHeight + 20) + 'px';
+                desc.style.maxHeight = '1000px';
                 if (toggle) {
                     toggle.className = 'fas fa-chevron-up';
                 }

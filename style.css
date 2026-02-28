@@ -660,6 +660,7 @@ body {
     max-height: 0;
     overflow: hidden;
     transition: max-height 0.3s ease, border-color 0.3s ease, padding 0.3s ease, margin 0.3s ease;
+    box-sizing: border-box;
 }
 
 .charm-description:not(.hidden) {
@@ -672,6 +673,12 @@ body {
 .charm-description.hidden {
     padding: 0;
     margin-top: 0;
+    max-height: 0 !important;
+}
+
+.charm-description small {
+    display: block;
+    line-height: 1.4;
 }
 
 .add-btn {
@@ -1153,6 +1160,11 @@ body {
         width: 100%;
         justify-content: center;
         flex-wrap: wrap;
+    }
+
+    /* Скрываем кнопку центрирования панели действий на мобильных */
+    #centerActionsBtn {
+        display: none;
     }
 
     .btn {
