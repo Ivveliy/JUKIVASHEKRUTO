@@ -168,15 +168,39 @@ class CharacterSheet {
                     this.updateAllCharacteristics();
                     this.updateCharacterNameDisplay();
 
-                    // Перерисовываем содержимое всех блоков
-                    if (window.characteristicsManager) window.characteristicsManager.renderBlock();
-                    if (window.statusesManager) window.statusesManager.renderBlock();
-                    if (window.traitsManager) window.traitsManager.renderBlock();
-                    if (window.equipmentManager) window.equipmentManager.renderBlock();
-                    if (window.nonCombatSkillsManager) window.nonCombatSkillsManager.renderBlock();
-                    if (window.combatSkillsManager) window.combatSkillsManager.renderBlock();
-                    if (window.pathsManager) window.pathsManager.renderBlock();
-                    if (window.charmsManager) window.charmsManager.renderBlock();
+                    // Перерисовываем содержимое всех блоков и переназначаем обработчики
+                    if (window.characteristicsManager) {
+                        window.characteristicsManager.renderBlock();
+                        window.characteristicsManager.setupEventListeners();
+                    }
+                    if (window.statusesManager) {
+                        window.statusesManager.renderBlock();
+                        window.statusesManager.setupEventListeners();
+                    }
+                    if (window.traitsManager) {
+                        window.traitsManager.renderBlock();
+                        window.traitsManager.refreshEventListeners();
+                    }
+                    if (window.equipmentManager) {
+                        window.equipmentManager.renderBlock();
+                        window.equipmentManager.setupEventListeners();
+                    }
+                    if (window.nonCombatSkillsManager) {
+                        window.nonCombatSkillsManager.renderBlock();
+                        window.nonCombatSkillsManager.setupEventListeners();
+                    }
+                    if (window.combatSkillsManager) {
+                        window.combatSkillsManager.renderBlock();
+                        window.combatSkillsManager.setupEventListeners();
+                    }
+                    if (window.pathsManager) {
+                        window.pathsManager.renderBlock();
+                        window.pathsManager.setupEventListeners();
+                    }
+                    if (window.charmsManager) {
+                        window.charmsManager.renderBlock();
+                        window.charmsManager.setupEventListeners();
+                    }
 
                     // Сохраняем состояние после всех обновлений
                     this.saveState();
@@ -186,6 +210,11 @@ class CharacterSheet {
                         this.applyActionsPanelPosition();
                     } else {
                         this.restoreActionsPanelState();
+                    }
+
+                    // Обновляем обработчики кнопок действий
+                    if (window.setupActionButtons) {
+                        window.setupActionButtons();
                     }
 
                     alert('Персонаж успешно импортирован!');
@@ -379,10 +408,11 @@ class CharacterSheet {
         
         // Добавляем обработчик для сворачивания
         const toggleBtn = block.querySelector('.toggle-block');
+        const self = this; // Сохраняем контекст
         toggleBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            this.toggleBlockCollapse(blockId);
-            
+            self.toggleBlockCollapse(blockId);
+
             // Меняем иконку
             const icon = toggleBtn.querySelector('i');
             if (block.classList.contains('collapsed')) {
@@ -774,34 +804,40 @@ class CharacterSheet {
 
     restoreActionsPanelState() {
         const content = document.getElementById('actionsContent');
+        const toggleBtn = document.querySelector('.toggle-panel');
         const icon = document.querySelector('.toggle-panel i');
-        
+
         if (content && this.state.actionsPanelCollapsed) {
             content.classList.add('collapsed');
-            if (icon) icon.className = 'fas fa-chevron-up';
+            if (toggleBtn) toggleBtn.classList.add('rotated');
+            if (icon) icon.className = 'fas fa-chevron-down';
         } else if (content) {
             content.classList.remove('collapsed');
-            if (icon) icon.className = 'fas fa-chevron-down';
+            if (toggleBtn) toggleBtn.classList.remove('rotated');
+            if (icon) icon.className = 'fas fa-chevron-up';
         }
     }
 
     toggleActionsPanel() {
         const content = document.getElementById('actionsContent');
+        const toggleBtn = document.querySelector('.toggle-panel');
         const icon = document.querySelector('.toggle-panel i');
-        
+
         if (content) {
             const isCollapsed = content.classList.contains('collapsed');
-            
+
             if (isCollapsed) {
                 content.classList.remove('collapsed');
+                if (toggleBtn) toggleBtn.classList.remove('rotated');
                 if (icon) icon.className = 'fas fa-chevron-down';
                 this.state.actionsPanelCollapsed = false;
             } else {
                 content.classList.add('collapsed');
+                if (toggleBtn) toggleBtn.classList.add('rotated');
                 if (icon) icon.className = 'fas fa-chevron-up';
                 this.state.actionsPanelCollapsed = true;
             }
-            
+
             this.saveState();
         }
     }

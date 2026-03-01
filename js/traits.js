@@ -98,6 +98,8 @@ class TraitsManager {
             if (e.target.closest('#add-trait-btn')) {
                 this.showTraitModal();
             } else if (e.target.closest('.edit-trait')) {
+                e.preventDefault();
+                e.stopPropagation();
                 const index = parseInt(e.target.closest('.list-item').dataset.index);
                 this.showTraitModal(index);
             } else if (e.target.closest('.remove-trait')) {
@@ -284,7 +286,7 @@ class TraitsManager {
 
         if (desc) {
             const isHidden = desc.classList.contains('hidden');
-            
+
             if (isHidden) {
                 desc.classList.remove('hidden');
                 desc.style.maxHeight = (desc.scrollHeight + 20) + 'px';
@@ -300,7 +302,12 @@ class TraitsManager {
             }
         }
     }
-    
+
+    // Метод для переназначения обработчиков после импорта
+    refreshEventListeners() {
+        this.setupEventListeners();
+    }
+
     createModal(title, content, onSave) {
         const modal = document.createElement('div');
         modal.className = 'modal active';

@@ -1,9 +1,10 @@
     // statuses.js - Блок активных статусов
 class StatusesManager {
     constructor() {
+        this.clickHandler = null;
         this.init();
     }
-    
+
     init() {
         this.renderBlock();
         this.setupEventListeners();
@@ -123,11 +124,18 @@ class StatusesManager {
     }
     
     setupEventListeners() {
-        // Делегирование событий для всех кнопок
-        document.addEventListener('click', (e) => {
+        // Удаляем старый обработчик если он есть
+        if (this.clickHandler) {
+            document.removeEventListener('click', this.clickHandler);
+        }
+
+        // Создаём новый обработчик
+        this.clickHandler = (e) => {
             if (e.target.closest('#add-status-btn')) {
                 this.showStatusModal();
             } else if (e.target.closest('.edit-status')) {
+                e.preventDefault();
+                e.stopPropagation();
                 const index = e.target.closest('.list-item').dataset.index;
                 this.showStatusModal(index);
             } else if (e.target.closest('.remove-status')) {
@@ -140,7 +148,9 @@ class StatusesManager {
                 const index = e.target.closest('.status-toggle').dataset.index;
                 this.toggleStatusDescription(index);
             }
-        });
+        };
+
+        document.addEventListener('click', this.clickHandler);
     }
     
     showStatusModal(statusIndex = null) {

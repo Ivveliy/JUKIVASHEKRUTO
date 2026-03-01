@@ -202,6 +202,8 @@ class CharmsManager {
             } else if (e.target.closest('#slots-info')) {
                 this.showSlotsExplanation();
             } else if (e.target.closest('.edit-charm')) {
+                e.preventDefault();
+                e.stopPropagation();
                 const index = parseInt(e.target.closest('.list-item').dataset.index);
                 this.showCharmModal(index);
             } else if (e.target.closest('.remove-charm')) {

@@ -1,9 +1,11 @@
 // equipment.js - Блок снаряжения
 class EquipmentManager {
     constructor() {
+        this.clickHandler = null;
+        this.changeHandler = null;
         this.init();
     }
-    
+
     init() {
         this.renderBlock();
         this.setupEventListeners();
@@ -142,6 +144,20 @@ class EquipmentManager {
             mainDetails = `
                 <div><small>ПУ: ${item.absorption || '0'}</small></div>
                 <div><small>Качество: ${item.quality || '1'}</small></div>
+                ${item.durability !== undefined ? `
+                <div class="durability-control">
+                    <small>Прочность: </small>
+                    <div style="display: inline-flex; align-items: center; gap: 4px;">
+                        <button type="button" class="char-btn char-minus durability-dec" data-index="${index}" title="Уменьшить на 1" style="width: 24px; height: 24px; min-width: 24px; padding: 0;">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                        <span class="durability-value">${item.durability}</span>
+                        <button type="button" class="char-btn char-plus durability-inc" data-index="${index}" title="Увеличить на 1" style="width: 24px; height: 24px; min-width: 24px; padding: 0;">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+                ` : ''}
             `;
             if (item.modifications) {
                 hasModifications = true;
@@ -183,10 +199,21 @@ class EquipmentManager {
     }
     
     setupEventListeners() {
-        document.addEventListener('click', (e) => {
+        // Удаляем старые обработчики если они есть
+        if (this.clickHandler) {
+            document.removeEventListener('click', this.clickHandler);
+        }
+        if (this.changeHandler) {
+            document.removeEventListener('change', this.changeHandler);
+        }
+
+        // Создаём новые обработчики
+        this.clickHandler = (e) => {
             if (e.target.closest('#add-equipment-btn')) {
                 this.showEquipmentModal();
             } else if (e.target.closest('.edit-equipment')) {
+                e.preventDefault();
+                e.stopPropagation();
                 const index = e.target.closest('.list-item').dataset.index;
                 this.showEquipmentModal(index);
             } else if (e.target.closest('.remove-equipment')) {
@@ -203,10 +230,10 @@ class EquipmentManager {
                 const listItem = btn.closest('.list-item');
                 const modifications = listItem.querySelector('.item-modifications');
                 const icon = btn.querySelector('i');
-                
+
                 if (modifications && icon) {
                     const isHidden = modifications.classList.contains('hidden');
-                    
+
                     if (isHidden) {
                         modifications.classList.remove('hidden');
                         modifications.style.maxHeight = (modifications.scrollHeight + 20) + 'px';
@@ -219,11 +246,20 @@ class EquipmentManager {
                         btn.title = 'Показать модификации';
                     }
                 }
+            } else if (e.target.closest('.durability-dec')) {
+                e.preventDefault();
+                e.stopPropagation();
+                const index = parseInt(e.target.closest('.durability-dec').dataset.index);
+                this.changeDurability(index, -1);
+            } else if (e.target.closest('.durability-inc')) {
+                e.preventDefault();
+                e.stopPropagation();
+                const index = parseInt(e.target.closest('.durability-inc').dataset.index);
+                this.changeDurability(index, 1);
             }
-        });
+        };
 
-        // Обработчик для изменения максимальной нагрузки
-        document.addEventListener('change', (e) => {
+        this.changeHandler = (e) => {
             if (e.target.id === 'max-load-input') {
                 const newMaxLoad = parseFloat(e.target.value) || 0;
                 const baseMight = characterSheet.state.characteristics.base.might;
@@ -233,7 +269,10 @@ class EquipmentManager {
                 characterSheet.saveState();
                 this.updateLoadDisplay();
             }
-        });
+        };
+
+        document.addEventListener('click', this.clickHandler);
+        document.addEventListener('change', this.changeHandler);
     }
 
     showEquipmentModal(equipmentIndex = null) {
@@ -299,6 +338,10 @@ class EquipmentManager {
                         <input type="number" step="1" min="1" id="armor-quality" class="form-control" value="${equipment?.quality || 1}">
                     </div>
                     <div class="form-group">
+                        <label for="armor-durability">Прочность</label>
+                        <input type="text" id="armor-durability" class="form-control" value="${equipment?.durability || ''}" placeholder="например: 5/5">
+                    </div>
+                    <div class="form-group">
                         <label for="armor-modifications">Модификации</label>
                         <textarea id="armor-modifications" class="form-control" rows="2">${equipment?.modifications || ''}</textarea>
                     </div>
@@ -325,8 +368,30 @@ class EquipmentManager {
         categorySelect.addEventListener('change', (e) => {
             this.updateEquipmentFields(e.target.value);
         });
-        
+
         document.body.appendChild(modal);
+    }
+
+    changeDurability(index, amount) {
+        const item = characterSheet.state.equipment[index];
+        if (!item || item.category !== 'armor') return;
+
+        const value = item.durability;
+        // Проверяем формат "X/Y"
+        const match = value.match(/^(\d+)\/(\d+)$/);
+        if (match) {
+            let current = parseInt(match[1]);
+            const max = parseInt(match[2]);
+            current = Math.max(0, Math.min(max, current + amount));
+            item.durability = `${current}/${max}`;
+        } else {
+            // Если формат не "X/Y", просто увеличиваем/уменьшаем число
+            const num = parseInt(value) || 0;
+            item.durability = Math.max(0, num + amount).toString();
+        }
+
+        characterSheet.saveState();
+        this.renderBlock();
     }
     
     updateEquipmentFields(category) {
@@ -359,6 +424,7 @@ class EquipmentManager {
         } else if (category === 'armor') {
             equipmentData.absorption = document.getElementById('armor-absorption').value;
             equipmentData.quality = parseInt(document.getElementById('armor-quality').value) || 1;
+            equipmentData.durability = document.getElementById('armor-durability').value;
             equipmentData.modifications = document.getElementById('armor-modifications').value;
         } else if (category === 'other') {
             equipmentData.description = document.getElementById('other-description').value;

@@ -861,11 +861,15 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: opacity 0.2s ease;
+    transition: transform 0.3s ease, opacity 0.2s ease;
 }
 
 .toggle-panel:hover {
     opacity: 0.8;
+}
+
+.toggle-panel.rotated {
+    transform: rotate(180deg);
 }
 
 .actions-content {
@@ -873,10 +877,17 @@ body {
     display: flex;
     flex-direction: column;
     gap: 10px;
+    max-height: 500px;
+    opacity: 1;
+    transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+    overflow: hidden;
 }
 
 .actions-content.collapsed {
-    display: none;
+    max-height: 0;
+    opacity: 0;
+    padding-top: 0;
+    padding-bottom: 0;
 }
 
 .action-btn {

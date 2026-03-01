@@ -1,6 +1,7 @@
 // characteristics.js - Блок характеристик
 class CharacteristicsManager {
     constructor() {
+        this.clickHandler = null;
         this.templates = {
             small: {
                 name: 'Мелкий Жук',
@@ -287,16 +288,13 @@ class CharacteristicsManager {
     }
     
     setupEventListeners() {
-        // Выбор шаблона
-        document.querySelectorAll('.template-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const template = e.target.dataset.template;
-                this.applyTemplate(template);
-            });
-        });
-        
-        // Кнопки изменения характеристик
-        document.addEventListener('click', (e) => {
+        // Удаляем старый обработчик клика если он есть
+        if (this.clickHandler) {
+            document.removeEventListener('click', this.clickHandler);
+        }
+
+        // Создаём новый обработчик для кнопок изменения характеристик
+        this.clickHandler = (e) => {
             if (e.target.classList.contains('char-plus') ||
                 e.target.closest('.char-plus')) {
                 const btn = e.target.classList.contains('char-plus') ? e.target : e.target.closest('.char-plus');
@@ -314,19 +312,45 @@ class CharacteristicsManager {
                     characterSheet.changeCharacteristic(btn, -0.5);
                 }
             }
+        };
+
+        document.addEventListener('click', this.clickHandler);
+
+        // Выбор шаблона - удаляем старые и добавляем новые
+        document.querySelectorAll('.template-btn').forEach(btn => {
+            const newBtn = btn.cloneNode(true);
+            btn.parentNode.replaceChild(newBtn, btn);
+            newBtn.addEventListener('click', (e) => {
+                const template = e.target.dataset.template;
+                this.applyTemplate(template);
+            });
         });
-        
+
         // Информация о сытости
-        document.getElementById('satiety-info')?.addEventListener('click', () => {
-            this.showSatietyInfo();
-        });
+        const satietyInfoBtn = document.getElementById('satiety-info');
+        if (satietyInfoBtn) {
+            const newSatietyBtn = satietyInfoBtn.cloneNode(true);
+            satietyInfoBtn.parentNode.replaceChild(newSatietyBtn, satietyInfoBtn);
+            newSatietyBtn.addEventListener('click', () => {
+                this.showSatietyInfo();
+            });
+        }
 
 
 
 
         
-        // Изменение текущих значений
-        document.getElementById('current-heart')?.addEventListener('change', (e) => {
+        // Изменение текущих значений - заменяем элементы для удаления старых обработчиков
+        const replaceInputHandler = (id, handler) => {
+            const el = document.getElementById(id);
+            if (el) {
+                const newEl = el.cloneNode(true);
+                el.parentNode.replaceChild(newEl, el);
+                newEl.addEventListener('change', handler);
+            }
+        };
+
+        replaceInputHandler('current-heart', (e) => {
             const value = parseInt(e.target.value);
             const max = characterSheet.state.characteristics.base.heart +
                        characterSheet.state.characteristics.modifiers.heart;
@@ -335,7 +359,7 @@ class CharacteristicsManager {
             this.updateDisplay();
         });
 
-        document.getElementById('current-endurance')?.addEventListener('change', (e) => {
+        replaceInputHandler('current-endurance', (e) => {
             const value = parseInt(e.target.value);
             const max = characterSheet.state.characteristics.base.endurance +
                        characterSheet.state.characteristics.modifiers.endurance;
@@ -344,7 +368,7 @@ class CharacteristicsManager {
             this.updateDisplay();
         });
 
-        document.getElementById('current-soul')?.addEventListener('change', (e) => {
+        replaceInputHandler('current-soul', (e) => {
             const value = parseInt(e.target.value);
             const max = characterSheet.state.characteristics.base.soul +
                        characterSheet.state.characteristics.modifiers.soul;
@@ -353,24 +377,21 @@ class CharacteristicsManager {
             this.updateDisplay();
         });
 
-        // Изменение голода
-        document.getElementById('hunger-input')?.addEventListener('change', (e) => {
+        replaceInputHandler('hunger-input', (e) => {
             const value = parseInt(e.target.value) || 0;
             characterSheet.state.characteristics.base.hunger = value;
             characterSheet.saveState();
             characterSheet.updateAllCharacteristics();
         });
 
-        // Изменение сытости
-        document.getElementById('satiety-input')?.addEventListener('change', (e) => {
+        replaceInputHandler('satiety-input', (e) => {
             const value = parseInt(e.target.value) || 0;
             characterSheet.state.characteristics.base.satiety = value;
             characterSheet.saveState();
             characterSheet.updateAllCharacteristics();
         });
 
-        // Изменение максимальных значений
-        document.getElementById('max-heart')?.addEventListener('change', (e) => {
+        replaceInputHandler('max-heart', (e) => {
             const value = parseInt(e.target.value);
             const modifiers = characterSheet.state.characteristics.modifiers.heart;
             characterSheet.state.characteristics.base.heart = Math.max(0, value - modifiers);
@@ -378,7 +399,7 @@ class CharacteristicsManager {
             this.updateDisplay();
         });
 
-        document.getElementById('max-endurance')?.addEventListener('change', (e) => {
+        replaceInputHandler('max-endurance', (e) => {
             const value = parseInt(e.target.value);
             const modifiers = characterSheet.state.characteristics.modifiers.endurance;
             characterSheet.state.characteristics.base.endurance = Math.max(0, value - modifiers);
@@ -386,7 +407,7 @@ class CharacteristicsManager {
             this.updateDisplay();
         });
 
-        document.getElementById('max-soul')?.addEventListener('change', (e) => {
+        replaceInputHandler('max-soul', (e) => {
             const value = parseInt(e.target.value);
             const modifiers = characterSheet.state.characteristics.modifiers.soul;
             characterSheet.state.characteristics.base.soul = Math.max(0, value - modifiers);

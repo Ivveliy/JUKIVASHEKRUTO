@@ -2,11 +2,13 @@
 class CombatSkillsManager {
     constructor() {
         this.activeFilter = 'all'; // 'all', 'combat', 'magic', 'active', 'ritual'
+        this.clickHandler = null;
         this.init();
     }
 
     init() {
         this.renderBlock();
+        this.setupEventListeners();
     }
 
     renderBlock() {
@@ -215,6 +217,8 @@ class CombatSkillsManager {
             }
             // Редактирование навыка
             else if (e.target.closest('.edit-combat-skill')) {
+                e.preventDefault();
+                e.stopPropagation();
                 const index = parseInt(e.target.closest('.list-item').dataset.index);
                 this.showSkillModal(index);
             }

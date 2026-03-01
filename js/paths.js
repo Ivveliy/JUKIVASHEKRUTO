@@ -1,12 +1,13 @@
 // paths.js - Блок рангов пути
 class PathsManager {
     constructor() {
-        this.listenersAdded = false;
+        this.clickHandler = null;
         this.init();
     }
 
     init() {
         this.renderBlock();
+        this.setupEventListeners();
     }
     
     renderBlock() {
@@ -120,13 +121,18 @@ class PathsManager {
     }
     
     setupEventListeners() {
-        if (this.listenersAdded) return;
-        this.listenersAdded = true;
+        // Удаляем старый обработчик если он есть
+        if (this.clickHandler) {
+            document.removeEventListener('click', this.clickHandler);
+        }
 
-        document.addEventListener('click', (e) => {
+        // Создаём новый обработчик
+        this.clickHandler = (e) => {
             if (e.target.closest('#add-path-btn')) {
                 this.showPathModal();
             } else if (e.target.closest('.edit-path')) {
+                e.preventDefault();
+                e.stopPropagation();
                 const index = parseInt(e.target.closest('.list-item').dataset.index);
                 this.showPathModal(index);
             } else if (e.target.closest('.remove-path')) {
@@ -142,7 +148,9 @@ class PathsManager {
                 const index = parseInt(btn.dataset.index);
                 this.togglePathRankDescriptions(index);
             }
-        });
+        };
+
+        document.addEventListener('click', this.clickHandler);
     }
     
     showPathModal(pathIndex = null) {
