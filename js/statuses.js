@@ -5,6 +5,15 @@ class StatusesManager {
         this.init();
     }
 
+    // Форматирование текста описания: сохранение переносов и абзацев
+    formatDescription(text) {
+        if (!text || text.trim() === '') return '';
+        // Сначала разбиваем по двойным переносам на абзацы
+        const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim() !== '');
+        // Внутри каждого абзаца одиночные переносы заменяем на <br>
+        return paragraphs.map(p => `<p>${p.replace(/\n/g, '<br>').trim()}</p>`).join('');
+    }
+
     init() {
         this.renderBlock();
         this.setupEventListeners();
@@ -53,7 +62,7 @@ class StatusesManager {
                         </div>
                         ${hasDescription ? `
                             <div class="status-description hidden" id="status-desc-${index}" style="max-height: 0; overflow: hidden; transition: max-height 0.3s ease;">
-                                <strong>Описание:</strong> ${status.description}
+                                <strong>Описание:</strong> ${this.formatDescription(status.description)}
                             </div>
                         ` : ''}
                     </div>
@@ -80,7 +89,7 @@ class StatusesManager {
 
         const mods = [];
         const charNames = {
-            might: 'Мощь', insight: 'Проницательность', shell: 'Панцирь', grace: 'Грация',
+            might: 'Мощь', insight: 'Проницательность', shell: 'Панцирь', absorption: 'Поглощение', grace: 'Грация',
             attractiveness: 'Привлекательность', horror: 'Жуть', speed: 'Скорость',
             heart: 'Сердца', endurance: 'Выносливость', soul: 'Душа'
         };
@@ -110,6 +119,7 @@ class StatusesManager {
             if (status.roundModifiers.might !== 0) charRoundMods.push(`Мощь ${status.roundModifiers.might > 0 ? '+' : ''}${status.roundModifiers.might}/р`);
             if (status.roundModifiers.insight !== 0) charRoundMods.push(`Проницательность ${status.roundModifiers.insight > 0 ? '+' : ''}${status.roundModifiers.insight}/р`);
             if (status.roundModifiers.shell !== 0) charRoundMods.push(`Панцирь ${status.roundModifiers.shell > 0 ? '+' : ''}${status.roundModifiers.shell}/р`);
+            if (status.roundModifiers.absorption !== 0) charRoundMods.push(`Поглощение ${status.roundModifiers.absorption > 0 ? '+' : ''}${status.roundModifiers.absorption}/р`);
             if (status.roundModifiers.grace !== 0) charRoundMods.push(`Грация ${status.roundModifiers.grace > 0 ? '+' : ''}${status.roundModifiers.grace}/р`);
             if (status.roundModifiers.attractiveness !== 0) charRoundMods.push(`Привлекательность ${status.roundModifiers.attractiveness > 0 ? '+' : ''}${status.roundModifiers.attractiveness}/р`);
             if (status.roundModifiers.horror !== 0) charRoundMods.push(`Жуть ${status.roundModifiers.horror > 0 ? '+' : ''}${status.roundModifiers.horror}/р`);
@@ -164,6 +174,7 @@ class StatusesManager {
                 might: 0,
                 insight: 0,
                 shell: 0,
+                absorption: 0,
                 grace: 0,
                 attractiveness: 0,
                 horror: 0,
@@ -178,6 +189,7 @@ class StatusesManager {
                 might: 0,
                 insight: 0,
                 shell: 0,
+                absorption: 0,
                 grace: 0,
                 attractiveness: 0,
                 horror: 0,
@@ -189,6 +201,7 @@ class StatusesManager {
                 might: 0,
                 insight: 0,
                 shell: 0,
+                absorption: 0,
                 grace: 0,
                 attractiveness: 0,
                 horror: 0,
@@ -264,6 +277,10 @@ class StatusesManager {
                             <label for="status-shell">Панцирь</label>
                             <input type="number" step="0.5" id="status-shell" class="form-control" value="${(status.modifiers && status.modifiers.shell) || 0}">
                         </div>
+                        <div class="form-group">
+                            <label for="status-absorption">Поглощение</label>
+                            <input type="number" step="0.5" id="status-absorption" class="form-control" value="${(status.modifiers && status.modifiers.absorption) || 0}">
+                        </div>
                     </div>
 
                     <div class="form-row">
@@ -324,6 +341,10 @@ class StatusesManager {
                         <div class="form-group">
                             <label for="status-shell-round">Панцирь</label>
                             <input type="number" step="0.5" id="status-shell-round" class="form-control" value="${(status.roundModifiers && status.roundModifiers.shell) || 0}">
+                        </div>
+                        <div class="form-group">
+                            <label for="status-absorption-round">Поглощение</label>
+                            <input type="number" step="0.5" id="status-absorption-round" class="form-control" value="${(status.roundModifiers && status.roundModifiers.absorption) || 0}">
                         </div>
                     </div>
 
@@ -389,6 +410,7 @@ class StatusesManager {
                 might: 0,
                 insight: 0,
                 shell: 0,
+                absorption: 0,
                 grace: 0,
                 attractiveness: 0,
                 horror: 0,
@@ -401,6 +423,7 @@ class StatusesManager {
                 might: 0,
                 insight: 0,
                 shell: 0,
+                absorption: 0,
                 grace: 0,
                 attractiveness: 0,
                 horror: 0,
@@ -443,6 +466,7 @@ class StatusesManager {
                 might: parseFloat(document.getElementById('status-might').value) || 0,
                 insight: parseFloat(document.getElementById('status-insight').value) || 0,
                 shell: parseFloat(document.getElementById('status-shell').value) || 0,
+                absorption: parseFloat(document.getElementById('status-absorption').value) || 0,
                 grace: parseFloat(document.getElementById('status-grace').value) || 0,
                 attractiveness: parseFloat(document.getElementById('status-attractiveness').value) || 0,
                 horror: parseFloat(document.getElementById('status-horror').value) || 0,
@@ -455,6 +479,7 @@ class StatusesManager {
                 might: parseFloat(document.getElementById('status-might-round').value) || 0,
                 insight: parseFloat(document.getElementById('status-insight-round').value) || 0,
                 shell: parseFloat(document.getElementById('status-shell-round').value) || 0,
+                absorption: parseFloat(document.getElementById('status-absorption-round').value) || 0,
                 grace: parseFloat(document.getElementById('status-grace-round').value) || 0,
                 attractiveness: parseFloat(document.getElementById('status-attractiveness-round').value) || 0,
                 horror: parseFloat(document.getElementById('status-horror-round').value) || 0,
@@ -464,6 +489,7 @@ class StatusesManager {
                 might: 0,
                 insight: 0,
                 shell: 0,
+                absorption: 0,
                 grace: 0,
                 attractiveness: 0,
                 horror: 0,

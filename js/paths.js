@@ -5,6 +5,15 @@ class PathsManager {
         this.init();
     }
 
+    // Форматирование текста описания: сохранение переносов и абзацев
+    formatDescription(text) {
+        if (!text || text.trim() === '') return '';
+        // Сначала разбиваем по двойным переносам на абзацы
+        const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim() !== '');
+        // Внутри каждого абзаца одиночные переносы заменяем на <br>
+        return paragraphs.map(p => `<p>${p.replace(/\n/g, '<br>').trim()}</p>`).join('');
+    }
+
     init() {
         this.renderBlock();
         this.setupEventListeners();
@@ -77,7 +86,7 @@ class PathsManager {
         if (hasDescriptions) {
             rankDescriptions = path.rankDescriptions.map((desc, i) => `
                 <div class="rank-description hidden" id="rank-desc-${index}-${i}" style="max-height: 0; overflow: hidden; transition: max-height 0.3s ease, padding 0.3s ease, margin 0.3s ease;">
-                    <strong>Ранг ${i + 1}:</strong> ${desc}
+                    <strong>Ранг ${i + 1}:</strong> ${this.formatDescription(desc)}
                 </div>
             `).join('');
         }

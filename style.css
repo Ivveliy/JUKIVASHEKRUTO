@@ -660,18 +660,33 @@ body {
     max-height: 0;
     overflow: hidden;
     transition: max-height 0.3s ease, border-color 0.3s ease, padding 0.3s ease, margin 0.3s ease;
+    box-sizing: border-box;
 }
 
 .trait-description:not(.hidden) {
     max-height: 500px;
     border-left-color: var(--accent-blue);
-    padding: 8px;
-    margin-top: 8px;
+    padding: 8px !important;
+    margin-top: 8px !important;
 }
 
 .trait-description.hidden {
-    padding: 0;
+    padding: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+.trait-description p {
+    margin: 0.3em 0;
+    text-align: justify;
+}
+
+.trait-description p:first-child {
     margin-top: 0;
+}
+
+.trait-description p:last-child {
+    margin-bottom: 0;
 }
 
 .item-modifications {
@@ -683,18 +698,33 @@ body {
     max-height: 0;
     overflow: hidden;
     transition: max-height 0.3s ease, border-color 0.3s ease, padding 0.3s ease, margin 0.3s ease;
+    box-sizing: border-box;
 }
 
 .item-modifications:not(.hidden) {
     max-height: 500px;
     border-left-color: var(--accent-blue);
-    padding: 8px;
-    margin-top: 8px;
+    padding: 8px !important;
+    margin-top: 8px !important;
 }
 
 .item-modifications.hidden {
-    padding: 0;
+    padding: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+.item-modifications p {
+    margin: 0.3em 0;
+    text-align: justify;
+}
+
+.item-modifications p:first-child {
     margin-top: 0;
+}
+
+.item-modifications p:last-child {
+    margin-bottom: 0;
 }
 
 .charm-description {
@@ -712,19 +742,208 @@ body {
 .charm-description:not(.hidden) {
     max-height: 1000px;
     border-left-color: var(--accent-blue);
-    padding: 8px;
-    margin-top: 8px;
+    padding: 8px !important;
+    margin-top: 8px !important;
 }
 
 .charm-description.hidden {
-    padding: 0;
-    margin-top: 0;
+    padding: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
     max-height: 0 !important;
 }
 
 .charm-description small {
     display: block;
     line-height: 1.4;
+    text-align: justify;
+}
+
+.charm-description p {
+    margin: 0.3em 0;
+    text-align: justify;
+}
+
+.charm-description p:first-child {
+    margin-top: 0;
+}
+
+.charm-description p:last-child {
+    margin-bottom: 0;
+}
+
+/* Описание статуса */
+.status-description {
+    margin-top: 5px;
+    padding: 8px;
+    background-color: var(--light-bg);
+    border-radius: 4px;
+    border-left: 3px solid transparent;
+    font-size: 0.9rem;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, border-color 0.3s ease, padding 0.3s ease, margin 0.3s ease;
+    box-sizing: border-box;
+}
+
+.status-description:not(.hidden) {
+    max-height: 500px;
+    border-left-color: var(--accent-blue);
+    padding: 8px !important;
+    margin-top: 5px !important;
+}
+
+.status-description.hidden {
+    padding: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+.status-description p {
+    margin: 0.3em 0;
+    text-align: justify;
+}
+
+.status-description p:first-child {
+    margin-top: 0;
+}
+
+.status-description p:last-child {
+    margin-bottom: 0;
+}
+
+/* Описание навыка */
+.skill-description {
+    margin-top: 5px;
+    padding: 8px;
+    background-color: var(--light-bg);
+    border-radius: 4px;
+    border-left: 3px solid transparent;
+    font-size: 0.9rem;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, border-color 0.3s ease, padding 0.3s ease, margin 0.3s ease;
+    box-sizing: border-box;
+}
+
+.skill-description:not(.hidden) {
+    max-height: 500px;
+    border-left-color: var(--accent-blue);
+    padding: 8px !important;
+    margin-top: 5px !important;
+}
+
+.skill-description.hidden {
+    padding: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+.skill-description p {
+    margin: 0.3em 0;
+    text-align: justify;
+}
+
+.skill-description p:first-child {
+    margin-top: 0;
+}
+
+.skill-description p:last-child {
+    margin-bottom: 0;
+}
+
+/* Описание ранга пути */
+.rank-description {
+    margin-top: 5px;
+    padding: 8px;
+    background-color: var(--light-bg);
+    border-radius: 4px;
+    font-size: 0.9rem;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, padding 0.3s ease, margin 0.3s ease;
+    box-sizing: border-box;
+}
+
+.rank-description:not(.hidden) {
+    max-height: 1000px;
+    padding: 8px !important;
+    margin-top: 5px !important;
+}
+
+.rank-description.hidden {
+    padding: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+.rank-description p {
+    margin: 0.3em 0;
+    text-align: justify;
+}
+
+.rank-description p:first-child {
+    margin-top: 0;
+}
+
+.rank-description p:last-child {
+    margin-bottom: 0;
+}
+
+/* Описание ритуала/боевого навыка */
+.ritual-description {
+    box-sizing: border-box;
+    background-color: transparent !important;
+    padding: 4px 0 !important;
+}
+
+.ritual-description p {
+    margin: 0.3em 0;
+    text-align: justify;
+}
+
+.ritual-description p:first-child {
+    margin-top: 0;
+}
+
+.ritual-description p:last-child {
+    margin-bottom: 0;
+}
+
+/* Описание предмета снаряжения */
+.item-description {
+    box-sizing: border-box;
+}
+
+.item-description p {
+    margin: 0.3em 0;
+    text-align: justify;
+}
+
+.item-description p:first-child {
+    margin-top: 0;
+}
+
+.item-description p:last-child {
+    margin-bottom: 0;
+}
+
+/* Пояснение к характеристике в модальном окне */
+.char-explanation-content {
+    box-sizing: border-box;
+}
+
+.char-explanation-content p {
+    margin: 0.3em 0;
+    text-align: justify;
+}
+
+.char-explanation-content p:first-child {
+    margin-top: 0;
+}
+
+.char-explanation-content p:last-child {
+    margin-bottom: 0;
 }
 
 .add-btn {
@@ -1071,30 +1290,6 @@ body {
     margin-top: 5px;
 }
 
-.skill-description {
-    margin-top: 5px;
-    padding: 8px;
-    background-color: white;
-    border-radius: 4px;
-    border-left: 3px solid transparent;
-    font-size: 0.9rem;
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.3s ease, border-color 0.3s ease, padding 0.3s ease, margin 0.3s ease;
-}
-
-.skill-description:not(.hidden) {
-    max-height: 500px;
-    border-left-color: var(--accent-blue);
-    padding: 8px;
-    margin-top: 5px;
-}
-
-.skill-description.hidden {
-    padding: 0;
-    margin-top: 0;
-}
-
 .status-toggle {
     background: none;
     border: none;
@@ -1102,30 +1297,6 @@ body {
     cursor: pointer;
     font-size: 0.8rem;
     margin-top: 5px;
-}
-
-.status-description {
-    margin-top: 5px;
-    padding: 8px;
-    background-color: var(--light-bg);
-    border-radius: 4px;
-    border-left: 3px solid transparent;
-    font-size: 0.9rem;
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.3s ease, border-color 0.3s ease, padding 0.3s ease, margin 0.3s ease;
-}
-
-.status-description:not(.hidden) {
-    max-height: 500px;
-    border-left-color: var(--accent-blue);
-    padding: 8px;
-    margin-top: 5px;
-}
-
-.status-description.hidden {
-    padding: 0;
-    margin-top: 0;
 }
 
 .status-modifiers {
@@ -1148,28 +1319,6 @@ body {
 
 .rank-dot.filled {
     background-color: var(--accent-blue);
-}
-
-.rank-description {
-    margin-top: 5px;
-    padding: 8px;
-    background-color: var(--light-bg);
-    border-radius: 4px;
-    font-size: 0.9rem;
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.3s ease, padding 0.3s ease, margin 0.3s ease;
-}
-
-.rank-description:not(.hidden) {
-    max-height: 1000px;
-    padding: 8px;
-    margin-top: 5px;
-}
-
-.rank-description.hidden {
-    padding: 0;
-    margin-top: 0;
 }
 
 /* Drag and drop стили */

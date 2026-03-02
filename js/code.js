@@ -31,6 +31,7 @@ class CharacterSheet {
                 might: 3,
                 insight: 3,
                 shell: 3,
+                absorption: 0,
                 grace: 3,
                 attractiveness: 1,
                 horror: 1,
@@ -45,6 +46,7 @@ class CharacterSheet {
                 might: 0,
                 insight: 0,
                 shell: 0,
+                absorption: 0,
                 grace: 0,
                 attractiveness: 0,
                 horror: 0,
@@ -65,8 +67,8 @@ class CharacterSheet {
     
     ensureModifiersIntegrity() {
         // Обеспечиваем обратную совместимость - добавляем недостающие ключи модификаторов
-        const requiredModifiers = ['might', 'insight', 'shell', 'grace', 'attractiveness', 'horror', 'speed', 'heart', 'endurance', 'soul', 'hunger', 'load'];
-        
+        const requiredModifiers = ['might', 'insight', 'shell', 'absorption', 'grace', 'attractiveness', 'horror', 'speed', 'heart', 'endurance', 'soul', 'hunger', 'load'];
+
         requiredModifiers.forEach(key => {
             if (this.state.characteristics.modifiers[key] === undefined) {
                 this.state.characteristics.modifiers[key] = 0;

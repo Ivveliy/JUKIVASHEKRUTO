@@ -7,6 +7,15 @@ class CombatSkillsManager {
         this.init();
     }
 
+    // Форматирование текста описания: сохранение переносов и абзацев
+    formatDescription(text) {
+        if (!text || text.trim() === '') return '';
+        // Сначала разбиваем по двойным переносам на абзацы
+        const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim() !== '');
+        // Внутри каждого абзаца одиночные переносы заменяем на <br>
+        return paragraphs.map(p => `<p>${p.replace(/\n/g, '<br>').trim()}</p>`).join('');
+    }
+
     init() {
         this.renderBlock();
         this.setupEventListeners();
@@ -212,7 +221,7 @@ class CombatSkillsManager {
                         <small>${this.getSkillTypeName(skill.type)}</small>
                     </div>
                     ${details}
-                    ${skill.description ? `<div class="ritual-description" style="margin-top: 8px; white-space: pre-wrap; background: var(--light-bg); padding: 8px; border-radius: 4px;"><small>${skill.description}</small></div>` : ''}
+                    ${skill.description ? `<div class="ritual-description" style="margin-top: 8px; background: var(--light-bg); padding: 8px; border-radius: 4px;">${this.formatDescription(skill.description)}</div>` : ''}
                 </div>
                 <div class="list-item-controls">
                     <button class="edit-combat-skill" title="Редактировать">

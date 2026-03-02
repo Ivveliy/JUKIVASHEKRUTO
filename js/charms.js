@@ -4,7 +4,16 @@ class CharmsManager {
         this.clickHandler = null;
         this.init();
     }
-    
+
+    // Форматирование текста описания: сохранение переносов и абзацев
+    formatDescription(text) {
+        if (!text || text.trim() === '') return '';
+        // Сначала разбиваем по двойным переносам на абзацы
+        const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim() !== '');
+        // Внутри каждого абзаца одиночные переносы заменяем на <br>
+        return paragraphs.map(p => `<p>${p.replace(/\n/g, '<br>').trim()}</p>`).join('');
+    }
+
     init() {
         this.renderBlock();
         this.setupEventListeners();
@@ -140,7 +149,7 @@ class CharmsManager {
                             ${mods ? `<div style="margin-top: 5px;"><small>${mods}</small></div>` : ''}
                             ${hasDescription ? `
                                 <div class="charm-description hidden" id="charm-desc-${index}">
-                                    <small>${charm.description}</small>
+                                    ${this.formatDescription(charm.description)}
                                 </div>
                             ` : ''}
                         </div>
@@ -172,7 +181,7 @@ class CharmsManager {
     
     getCharmModifiersText(charm) {
         const charNames = {
-            might: 'Мощь', insight: 'Проницательность', shell: 'Панцирь', grace: 'Грация',
+            might: 'Мощь', insight: 'Проницательность', shell: 'Панцирь', absorption: 'Поглощение', grace: 'Грация',
             attractiveness: 'Привлекательность', horror: 'Жуть', speed: 'Скорость',
             heart: 'Сердца', endurance: 'Выносливость', soul: 'Душа', hunger: 'Голод'
         };
@@ -308,8 +317,12 @@ class CharmsManager {
                         <label for="charm-shell">Панцирь</label>
                         <input type="number" step="0.5" id="charm-shell" class="form-control" value="${charm.modifiers.shell || 0}">
                     </div>
+                    <div class="form-group">
+                        <label for="charm-absorption">Поглощение</label>
+                        <input type="number" step="0.5" id="charm-absorption" class="form-control" value="${charm.modifiers.absorption || 0}">
+                    </div>
                 </div>
-                
+
                 <div class="form-row">
                     <div class="form-group">
                         <label for="charm-grace">Грация</label>
@@ -377,6 +390,7 @@ class CharmsManager {
                 might: 0,
                 insight: 0,
                 shell: 0,
+                absorption: 0,
                 grace: 0,
                 attractiveness: 0,
                 horror: 0,
@@ -404,6 +418,7 @@ class CharmsManager {
                 might: parseFloat(document.getElementById('charm-might').value) || 0,
                 insight: parseFloat(document.getElementById('charm-insight').value) || 0,
                 shell: parseFloat(document.getElementById('charm-shell').value) || 0,
+                absorption: parseFloat(document.getElementById('charm-absorption').value) || 0,
                 grace: parseFloat(document.getElementById('charm-grace').value) || 0,
                 attractiveness: parseFloat(document.getElementById('charm-attractiveness').value) || 0,
                 horror: parseFloat(document.getElementById('charm-horror').value) || 0,

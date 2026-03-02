@@ -6,6 +6,15 @@ class NonCombatSkillsManager {
         this.init();
     }
 
+    // Форматирование текста описания: сохранение переносов и абзацев
+    formatDescription(text) {
+        if (!text || text.trim() === '') return '';
+        // Сначала разбиваем по двойным переносам на абзацы
+        const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim() !== '');
+        // Внутри каждого абзаца одиночные переносы заменяем на <br>
+        return paragraphs.map(p => `<p>${p.replace(/\n/g, '<br>').trim()}</p>`).join('');
+    }
+
     init() {
         this.renderBlock();
         this.setupEventListeners();
@@ -55,7 +64,7 @@ class NonCombatSkillsManager {
                     </div>
                 </div>
                 <div class="skill-description hidden" id="skill-desc-${index}">
-                    <strong>Описание:</strong> ${skill.description || 'Нет описания'}
+                    <strong>Описание:</strong> ${skill.description ? this.formatDescription(skill.description) : 'Нет описания'}
                     ${skill.characteristics && skill.characteristics.length > 0 ? `
                         <div style="margin-top: 5px;">
                             <strong>Основа:</strong> ${skill.characteristics.map(char => this.getCharacteristicName(char)).join(', ')}

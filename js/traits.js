@@ -3,7 +3,16 @@ class TraitsManager {
     constructor() {
         this.init();
     }
-    
+
+    // Форматирование текста описания: сохранение переносов и абзацев
+    formatDescription(text) {
+        if (!text || text.trim() === '') return '';
+        // Сначала разбиваем по двойным переносам на абзацы
+        const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim() !== '');
+        // Внутри каждого абзаца одиночные переносы заменяем на <br>
+        return paragraphs.map(p => `<p>${p.replace(/\n/g, '<br>').trim()}</p>`).join('');
+    }
+
     init() {
         this.listenersAdded = false;
         this.removing = false;
@@ -46,7 +55,7 @@ class TraitsManager {
                     </div>
                     ${trait.description ? `
                         <div class="trait-description hidden" id="trait-desc-${index}" style="max-height: 0; overflow: hidden; transition: max-height 0.3s ease;">
-                            <small>${trait.description}</small>
+                            ${this.formatDescription(trait.description)}
                         </div>
                     ` : ''}
                 </div>
@@ -70,7 +79,7 @@ class TraitsManager {
     renderTraitModifiers(trait) {
         const mods = [];
         const charNames = {
-            might: 'Мощь', insight: 'Проницательность', shell: 'Панцирь', grace: 'Грация',
+            might: 'Мощь', insight: 'Проницательность', shell: 'Панцирь', absorption: 'Поглощение', grace: 'Грация',
             attractiveness: 'Привлекательность', horror: 'Жуть', speed: 'Скорость',
             heart: 'Сердца', endurance: 'Выносливость', soul: 'Душа', hunger: 'Голод',
             load: 'Нагрузка'
@@ -151,8 +160,12 @@ class TraitsManager {
                         <label for="trait-shell">Панцирь</label>
                         <input type="number" step="0.5" id="trait-shell" class="form-control" value="${trait.modifiers.shell || 0}">
                     </div>
+                    <div class="form-group">
+                        <label for="trait-absorption">Поглощение</label>
+                        <input type="number" step="0.5" id="trait-absorption" class="form-control" value="${trait.modifiers.absorption || 0}">
+                    </div>
                 </div>
-                
+
                 <div class="form-row">
                     <div class="form-group">
                         <label for="trait-grace">Грация</label>
@@ -221,6 +234,7 @@ class TraitsManager {
                 might: 0,
                 insight: 0,
                 shell: 0,
+                absorption: 0,
                 grace: 0,
                 attractiveness: 0,
                 horror: 0,
@@ -245,6 +259,7 @@ class TraitsManager {
                 might: parseFloat(document.getElementById('trait-might').value) || 0,
                 insight: parseFloat(document.getElementById('trait-insight').value) || 0,
                 shell: parseFloat(document.getElementById('trait-shell').value) || 0,
+                absorption: parseFloat(document.getElementById('trait-absorption').value) || 0,
                 grace: parseFloat(document.getElementById('trait-grace').value) || 0,
                 attractiveness: parseFloat(document.getElementById('trait-attractiveness').value) || 0,
                 horror: parseFloat(document.getElementById('trait-horror').value) || 0,

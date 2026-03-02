@@ -6,6 +6,15 @@ class EquipmentManager {
         this.init();
     }
 
+    // Форматирование текста описания: сохранение переносов и абзацев
+    formatDescription(text) {
+        if (!text || text.trim() === '') return '';
+        // Сначала разбиваем по двойным переносам на абзацы
+        const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim() !== '');
+        // Внутри каждого абзаца одиночные переносы заменяем на <br>
+        return paragraphs.map(p => `<p>${p.replace(/\n/g, '<br>').trim()}</p>`).join('');
+    }
+
     init() {
         this.renderBlock();
         this.setupEventListeners();
@@ -37,9 +46,11 @@ class EquipmentManager {
         const percentage = load.max > 0 ? (load.current / load.max) * 100 : 0;
 
         const baseMight = characterSheet.state.characteristics.base.might;
+        const mightMod = characterSheet.state.characteristics.modifiers.might || 0;
+        const totalMight = baseMight + mightMod;
         const loadModifier = characterSheet.state.characteristics.modifiers.load || 0;
         const loadAdjustment = characterSheet.state.loadAdjustment || 0;
-        const maxLoad = baseMight + loadModifier + loadAdjustment;
+        const maxLoad = totalMight + loadModifier + loadAdjustment;
 
         return `
             <div class="characteristic">
@@ -64,8 +75,8 @@ class EquipmentManager {
 
             <div class="load-sources" style="margin-top: 10px; padding: 10px; background-color: var(--light-bg); border-radius: var(--radius); font-size: 0.9em;">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                    <span><i class="fas fa-chart-bar"></i> Мощь:</span>
-                    <span>${baseMight}</span>
+                    <span><i class="fas fa-chart-bar"></i> Мощь (итог):</span>
+                    <span>${totalMight}</span>
                 </div>
                 ${loadModifier !== 0 ? `
                     <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
@@ -134,6 +145,7 @@ class EquipmentManager {
             mainDetails = `
                 <div><small>Тип: ${item.weaponType || 'Не указан'}</small></div>
                 <div><small>Урон: ${item.damage || '0'} (${item.damageType || 'не указан'})</small></div>
+                ${item.range ? `<div><small>Дальность: ${item.range}</small></div>` : ''}
                 <div><small>Качество: ${item.quality || '1'}</small></div>
             `;
             if (item.modifications) {
@@ -164,7 +176,7 @@ class EquipmentManager {
                 modifications = `<div><small>Модификации: ${item.modifications}</small></div>`;
             }
         } else {
-            mainDetails = `<div><small>${item.description || 'Описание отсутствует'}</small></div>`;
+            mainDetails = `<div class="item-description">${this.formatDescription(item.description || 'Описание отсутствует')}</div>`;
         }
 
         return `
@@ -263,9 +275,11 @@ class EquipmentManager {
             if (e.target.id === 'max-load-input') {
                 const newMaxLoad = parseFloat(e.target.value) || 0;
                 const baseMight = characterSheet.state.characteristics.base.might;
+                const mightMod = characterSheet.state.characteristics.modifiers.might || 0;
+                const totalMight = baseMight + mightMod;
                 const loadModifier = characterSheet.state.characteristics.modifiers.load || 0;
                 // Сохраняем только ручную корректировку
-                characterSheet.state.loadAdjustment = newMaxLoad - baseMight - loadModifier;
+                characterSheet.state.loadAdjustment = newMaxLoad - totalMight - loadModifier;
                 characterSheet.saveState();
                 this.updateLoadDisplay();
             }
@@ -303,9 +317,15 @@ class EquipmentManager {
                 
                 <!-- Поля для оружия -->
                 <div id="weapon-fields" style="display: ${equipment?.category === 'weapons' || !equipment ? 'block' : 'none'}">
-                    <div class="form-group">
-                        <label for="weapon-type">Тип оружия</label>
-                        <input type="text" id="weapon-type" class="form-control" value="${equipment?.weaponType || ''}">
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 2;">
+                            <label for="weapon-type">Тип оружия</label>
+                            <input type="text" id="weapon-type" class="form-control" value="${equipment?.weaponType || ''}">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label for="weapon-range">Дальность</label>
+                            <input type="text" id="weapon-range" class="form-control" value="${equipment?.range || ''}" placeholder="например: 1-3">
+                        </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
@@ -316,10 +336,10 @@ class EquipmentManager {
                             <label for="weapon-damage-type">Тип урона</label>
                             <input type="text" id="weapon-damage-type" class="form-control" value="${equipment?.damageType || ''}" placeholder="рубящий">
                         </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="weapon-quality">Качество</label>
-                        <input type="number" step="1" min="1" id="weapon-quality" class="form-control" value="${equipment?.quality || 1}">
+                        <div class="form-group">
+                            <label for="weapon-quality">Качество</label>
+                            <input type="number" step="1" min="1" id="weapon-quality" class="form-control" value="${equipment?.quality || 1}">
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="weapon-modifications">Модификации</label>
@@ -417,6 +437,7 @@ class EquipmentManager {
         
         if (category === 'weapons') {
             equipmentData.weaponType = document.getElementById('weapon-type').value;
+            equipmentData.range = document.getElementById('weapon-range').value;
             equipmentData.damage = document.getElementById('weapon-damage').value;
             equipmentData.damageType = document.getElementById('weapon-damage-type').value;
             equipmentData.quality = parseInt(document.getElementById('weapon-quality').value) || 1;
@@ -479,9 +500,11 @@ class EquipmentManager {
             document.getElementById('max-load-input')?.addEventListener('change', (e) => {
                 const newMaxLoad = parseFloat(e.target.value) || 0;
                 const baseMight = characterSheet.state.characteristics.base.might;
+                const mightMod = characterSheet.state.characteristics.modifiers.might || 0;
+                const totalMight = baseMight + mightMod;
                 const loadModifier = characterSheet.state.characteristics.modifiers.load || 0;
                 // Сохраняем только ручную корректировку
-                characterSheet.state.loadAdjustment = newMaxLoad - baseMight - loadModifier;
+                characterSheet.state.loadAdjustment = newMaxLoad - totalMight - loadModifier;
                 characterSheet.saveState();
                 this.updateLoadDisplay();
             });
