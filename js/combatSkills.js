@@ -1,7 +1,7 @@
 // combatSkills.js - Блок боевых навыков
 class CombatSkillsManager {
     constructor() {
-        this.activeFilter = 'all'; // 'all', 'combat', 'magic', 'active', 'ritual'
+        this.activeFilter = 'all'; // 'all', 'combat', 'magic', 'ritual'
         this.clickHandler = null;
         this.init();
     }
@@ -19,7 +19,7 @@ class CombatSkillsManager {
             <button class="add-btn" id="add-combat-skill-btn" style="margin-bottom: 15px;">
                 <i class="fas fa-plus"></i> Добавить навык
             </button>
-            
+
             <div class="combat-skills-filters">
                 <button class="filter-btn ${this.activeFilter === 'all' ? 'active' : ''}" data-filter="all">
                     Все
@@ -32,9 +32,6 @@ class CombatSkillsManager {
                 </button>
                 <button class="filter-btn ${this.activeFilter === 'ritual' ? 'active' : ''}" data-filter="ritual">
                     <i class="fas fa-book-dead"></i> Ритуалы
-                </button>
-                <button class="filter-btn ${this.activeFilter === 'active' ? 'active' : ''}" data-filter="active">
-                    <i class="fas fa-check-circle"></i> Активные
                 </button>
             </div>
             <div class="combat-skills-list">
@@ -66,9 +63,6 @@ class CombatSkillsManager {
             filteredSkills = filteredSkills.filter(skill => skill.type === 'magic');
         } else if (this.activeFilter === 'ritual') {
             filteredSkills = filteredSkills.filter(skill => skill.type === 'ritual');
-        } else if (this.activeFilter === 'active') {
-            // Активные навыки - только боевые искусства и магия (не ритуалы)
-            filteredSkills = filteredSkills.filter(skill => skill.isActive && skill.type !== 'ritual');
         }
 
         if (filteredSkills.length === 0) {
@@ -80,18 +74,32 @@ class CombatSkillsManager {
         const magic = filteredSkills.filter(skill => skill.type === 'magic');
         const rituals = filteredSkills.filter(skill => skill.type === 'ritual');
 
+        // Активные навыки (боевые искусства и магия) для отображения вверху
+        const activeCombatArts = combatArts.filter(skill => skill.isActive);
+        const activeMagic = magic.filter(skill => skill.isActive);
+        const activeSkills = [...activeCombatArts, ...activeMagic];
+
         let html = '';
 
+        // Отображаем активные навыки в самом верху (если они есть)
+        if (activeSkills.length > 0) {
+            html += `<h4 style="color: #4CAF50;"><i class="fas fa-check-circle"></i> Активные навыки</h4>`;
+            html += activeSkills.map((skill) => this.renderSkillItem(skill, true)).join('');
+        }
+
+        // Отображаем боевые искусства
         if (combatArts.length > 0) {
-            html += `<h4>Боевые искусства</h4>`;
+            html += `<h4 style="margin-top: ${activeSkills.length > 0 ? '20px' : '0'};">Боевые искусства</h4>`;
             html += combatArts.map((skill) => this.renderSkillItem(skill)).join('');
         }
 
+        // Отображаем магию
         if (magic.length > 0) {
             html += `<h4 style="margin-top: 20px;">Магия</h4>`;
             html += magic.map((skill) => this.renderSkillItem(skill)).join('');
         }
 
+        // Отображаем ритуалы
         if (rituals.length > 0) {
             html += `<h4 style="margin-top: 20px;">Ритуалы</h4>`;
             html += rituals.map((skill) => this.renderSkillItem(skill)).join('');
@@ -100,7 +108,7 @@ class CombatSkillsManager {
         return html;
     }
     
-    renderSkillItem(skill) {
+    renderSkillItem(skill, isDuplicate = false) {
         // Инициализируем isActive для старых навыков (обратная совместимость)
         if (skill.isActive === undefined) {
             skill.isActive = false;
@@ -148,7 +156,7 @@ class CombatSkillsManager {
         }
 
         return `
-            <div class="list-item" data-index="${index}">
+            <div class="list-item ${isDuplicate ? 'duplicate-skill' : ''}" data-index="${index}">
                 <div>
                     <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
                         ${skill.type !== 'ritual' ? `

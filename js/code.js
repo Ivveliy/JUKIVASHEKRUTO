@@ -377,7 +377,7 @@ class CharacterSheet {
             'statuses': { title: 'Активные статусы', icon: 'fas fa-hourglass-half' },
             'traits': { title: 'Черты', icon: 'fas fa-star' },
             'equipment': { title: 'Снаряжение', icon: 'fas fa-shield-alt' },
-            'nonCombatSkills': { title: 'Не боевые навыки', icon: 'fas fa-user-friends' },
+            'nonCombatSkills': { title: 'Умения', icon: 'fas fa-user-friends' },
             'combatSkills': { title: 'Боевые навыки', icon: 'fas fa-fist-raised' },
             'paths': { title: 'Ранги пути', icon: 'fas fa-road' },
             'charms': { title: 'Амулеты', icon: 'fas fa-gem' }

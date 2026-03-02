@@ -400,6 +400,12 @@ body {
     border-left: 3px solid var(--primary-color);
 }
 
+/* Стили для дубликатов активных навыков */
+.list-item.duplicate-skill {
+    border-left: 3px solid var(--accent-green);
+    background-color: rgba(46, 204, 113, 0.08);
+}
+
 .list-item-controls {
     display: flex;
     gap: 8px;
