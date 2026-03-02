@@ -413,6 +413,46 @@ body {
     margin-left: 10px;
 }
 
+/* Сворачиваемые разделы боевых навыков */
+.skill-section {
+    margin-bottom: 15px;
+}
+
+.skill-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background-color: var(--light-bg);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.skill-section-header:hover {
+    background-color: rgba(52, 152, 219, 0.1);
+}
+
+.skill-section-header h4 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.skill-section-content {
+    padding: 10px;
+    transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+    max-height: 1000px;
+    opacity: 1;
+}
+
+.skill-section-content.collapsed {
+    max-height: 0;
+    padding: 0;
+    opacity: 0;
+    overflow: hidden;
+}
+
 /* Фильтры боевых навыков */
 .combat-skills-filters {
     display: flex;

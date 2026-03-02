@@ -17,7 +17,8 @@ class CharacterSheet {
             collapsedBlocks: {},
             actionsPanelCollapsed: false,
             actionsPanelPosition: { x: null, y: null },
-            loadAdjustment: 0
+            loadAdjustment: 0,
+            combatSkillsCollapsedSections: {} // Состояние сворачивания разделов боевых навыков
         };
 
         this.init();
@@ -89,6 +90,11 @@ class CharacterSheet {
     }
     
     saveState() {
+        // Сохраняем состояние сворачивания разделов боевых навыков
+        if (window.combatSkillsManager) {
+            this.state.combatSkillsCollapsedSections = window.combatSkillsManager.collapsedSections;
+        }
+
         const stateToSave = {
             ...this.state,
             // Сохраняем только данные, не функции
@@ -99,9 +105,10 @@ class CharacterSheet {
             nonCombatSkills: JSON.parse(JSON.stringify(this.state.nonCombatSkills)),
             combatSkills: JSON.parse(JSON.stringify(this.state.combatSkills)),
             paths: JSON.parse(JSON.stringify(this.state.paths)),
-            charms: JSON.parse(JSON.stringify(this.state.charms))
+            charms: JSON.parse(JSON.stringify(this.state.charms)),
+            combatSkillsCollapsedSections: this.state.combatSkillsCollapsedSections
         };
-        
+
         localStorage.setItem('hk_rpg_character', JSON.stringify(stateToSave));
         console.log('Состояние сохранено');
     }
@@ -111,17 +118,17 @@ class CharacterSheet {
         if (saved) {
             try {
                 const loadedState = JSON.parse(saved);
-                
+
                 // Загружаем каждую часть состояния
                 Object.keys(loadedState).forEach(key => {
                     if (this.state.hasOwnProperty(key)) {
                         this.state[key] = loadedState[key];
                     }
                 });
-                
+
                 // Обеспечиваем целостность модификаторов (для обратной совместимости)
                 this.ensureModifiersIntegrity();
-                
+
                 console.log('Состояние загружено');
             } catch (e) {
                 console.error('Ошибка загрузки состояния:', e);
@@ -130,6 +137,9 @@ class CharacterSheet {
 
         // Обновляем отображение имени персонажа после загрузки
         this.updateCharacterNameDisplay();
+
+        // Восстанавливаем состояние сворачивания разделов боевых навыков
+        this.restoreCombatSkillsCollapsedState();
     }
 
     
@@ -162,6 +172,9 @@ class CharacterSheet {
 
                     // Обеспечиваем целостность модификаторов для импортированных данных
                     this.ensureModifiersIntegrity();
+
+                    // Восстанавливаем состояние сворачивания разделов боевых навыков ДО отрисовки
+                    this.restoreCombatSkillsCollapsedState();
 
                     this.renderBlocks();
 
@@ -846,6 +859,13 @@ class CharacterSheet {
         const nameInput = document.getElementById('character-name');
         if (nameInput) {
             nameInput.value = this.state.characterName || '';
+        }
+    }
+
+    restoreCombatSkillsCollapsedState() {
+        // Восстанавливаем состояние сворачивания разделов боевых навыков
+        if (window.combatSkillsManager && this.state.combatSkillsCollapsedSections) {
+            window.combatSkillsManager.collapsedSections = { ...this.state.combatSkillsCollapsedSections };
         }
     }
 }

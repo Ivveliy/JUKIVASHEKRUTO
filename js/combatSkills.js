@@ -3,6 +3,7 @@ class CombatSkillsManager {
     constructor() {
         this.activeFilter = 'all'; // 'all', 'combat', 'magic', 'ritual'
         this.clickHandler = null;
+        this.collapsedSections = {}; // Состояние сворачивания разделов
         this.init();
     }
 
@@ -83,26 +84,66 @@ class CombatSkillsManager {
 
         // Отображаем активные навыки в самом верху (если они есть)
         if (activeSkills.length > 0) {
-            html += `<h4 style="color: #4CAF50;"><i class="fas fa-check-circle"></i> Активные навыки</h4>`;
-            html += activeSkills.map((skill) => this.renderSkillItem(skill, true)).join('');
+            const activeCollapsed = this.collapsedSections['active'];
+            html += `
+                <div class="skill-section">
+                    <div class="skill-section-header" data-section="active">
+                        <h4 style="color: #4CAF50; margin: 0;"><i class="fas fa-check-circle"></i> Активные навыки</h4>
+                        <i class="fas fa-chevron-${activeCollapsed ? 'down' : 'up'}"></i>
+                    </div>
+                    <div class="skill-section-content ${activeCollapsed ? 'collapsed' : ''}">
+                        ${activeSkills.map((skill) => this.renderSkillItem(skill, true)).join('')}
+                    </div>
+                </div>
+            `;
         }
 
         // Отображаем боевые искусства
         if (combatArts.length > 0) {
-            html += `<h4 style="margin-top: ${activeSkills.length > 0 ? '20px' : '0'};">Боевые искусства</h4>`;
-            html += combatArts.map((skill) => this.renderSkillItem(skill)).join('');
+            const combatCollapsed = this.collapsedSections['combat'];
+            html += `
+                <div class="skill-section">
+                    <div class="skill-section-header" data-section="combat">
+                        <h4 style="margin: 0;">Боевые искусства</h4>
+                        <i class="fas fa-chevron-${combatCollapsed ? 'down' : 'up'}"></i>
+                    </div>
+                    <div class="skill-section-content ${combatCollapsed ? 'collapsed' : ''}">
+                        ${combatArts.map((skill) => this.renderSkillItem(skill)).join('')}
+                    </div>
+                </div>
+            `;
         }
 
         // Отображаем магию
         if (magic.length > 0) {
-            html += `<h4 style="margin-top: 20px;">Магия</h4>`;
-            html += magic.map((skill) => this.renderSkillItem(skill)).join('');
+            const magicCollapsed = this.collapsedSections['magic'];
+            html += `
+                <div class="skill-section">
+                    <div class="skill-section-header" data-section="magic">
+                        <h4 style="margin: 0;">Магия</h4>
+                        <i class="fas fa-chevron-${magicCollapsed ? 'down' : 'up'}"></i>
+                    </div>
+                    <div class="skill-section-content ${magicCollapsed ? 'collapsed' : ''}">
+                        ${magic.map((skill) => this.renderSkillItem(skill)).join('')}
+                    </div>
+                </div>
+            `;
         }
 
         // Отображаем ритуалы
         if (rituals.length > 0) {
-            html += `<h4 style="margin-top: 20px;">Ритуалы</h4>`;
-            html += rituals.map((skill) => this.renderSkillItem(skill)).join('');
+            const ritualCollapsed = this.collapsedSections['ritual'];
+            html += `
+                <div class="skill-section">
+                    <div class="skill-section-header" data-section="ritual">
+                        <h4 style="margin: 0;">Ритуалы</h4>
+                        <i class="fas fa-chevron-${ritualCollapsed ? 'down' : 'up'}"></i>
+                    </div>
+                    <div class="skill-section-content ${ritualCollapsed ? 'collapsed' : ''}">
+                        ${rituals.map((skill) => this.renderSkillItem(skill)).join('')}
+                    </div>
+                </div>
+            `;
         }
 
         return html;
@@ -213,8 +254,14 @@ class CombatSkillsManager {
         }
 
         this.clickHandler = (e) => {
+            // Сворачивание/разворачивание разделов
+            if (e.target.closest('.skill-section-header')) {
+                const header = e.target.closest('.skill-section-header');
+                const section = header.dataset.section;
+                this.toggleSection(section);
+            }
             // Обработка кнопок фильтров
-            if (e.target.closest('.filter-btn')) {
+            else if (e.target.closest('.filter-btn')) {
                 const btn = e.target.closest('.filter-btn');
                 const filter = btn.dataset.filter;
                 this.setFilter(filter);
@@ -270,6 +317,15 @@ class CombatSkillsManager {
 
     setFilter(filter) {
         this.activeFilter = filter;
+        this.renderBlock();
+    }
+
+    toggleSection(section) {
+        if (this.collapsedSections[section] === undefined) {
+            this.collapsedSections[section] = false;
+        }
+        this.collapsedSections[section] = !this.collapsedSections[section];
+        characterSheet.saveState();
         this.renderBlock();
     }
 
