@@ -91,6 +91,28 @@ class CombatSkillsManager {
 
         let html = '';
 
+        // Отображаем ритуалы только при активном фильтре "ritual"
+        if (this.activeFilter === 'ritual' && rituals.length > 0) {
+            const ritualCollapsed = this.collapsedSections['ritual'];
+            html += `
+                <div class="skill-section">
+                    <div class="skill-section-header" data-section="ritual">
+                        <h4 style="margin: 0;">Ритуалы</h4>
+                        <i class="fas fa-chevron-${ritualCollapsed ? 'down' : 'up'}"></i>
+                    </div>
+                    <div class="skill-section-content ${ritualCollapsed ? 'collapsed' : ''}">
+                        ${rituals.map((skill) => this.renderSkillItem(skill)).join('')}
+                    </div>
+                </div>
+            `;
+            return html;
+        }
+
+        // Если фильтр "ritual", но ритуалов нет - показываем пустой список
+        if (this.activeFilter === 'ritual') {
+            return '<p class="empty-list">Нет ритуалов</p>';
+        }
+
         // Отображаем активные навыки в самом верху (если они есть)
         if (activeSkills.length > 0) {
             const activeCollapsed = this.collapsedSections['active'];
@@ -134,22 +156,6 @@ class CombatSkillsManager {
                     </div>
                     <div class="skill-section-content ${magicCollapsed ? 'collapsed' : ''}">
                         ${magic.map((skill) => this.renderSkillItem(skill)).join('')}
-                    </div>
-                </div>
-            `;
-        }
-
-        // Отображаем ритуалы
-        if (rituals.length > 0) {
-            const ritualCollapsed = this.collapsedSections['ritual'];
-            html += `
-                <div class="skill-section">
-                    <div class="skill-section-header" data-section="ritual">
-                        <h4 style="margin: 0;">Ритуалы</h4>
-                        <i class="fas fa-chevron-${ritualCollapsed ? 'down' : 'up'}"></i>
-                    </div>
-                    <div class="skill-section-content ${ritualCollapsed ? 'collapsed' : ''}">
-                        ${rituals.map((skill) => this.renderSkillItem(skill)).join('')}
                     </div>
                 </div>
             `;
