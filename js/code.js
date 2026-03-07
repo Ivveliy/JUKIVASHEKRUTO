@@ -13,13 +13,14 @@ class CharacterSheet {
             charms: [],
             charmSlots: 0, // Ручная корректировка количества слотов (по умолчанию 0)
             blockOrder: ['characteristics', 'statuses', 'traits', 'equipment',
-                       'nonCombatSkills', 'combatSkills', 'paths', 'charms'],
+                       'nonCombatSkills', 'combatSkills', 'paths', 'charms', 'advancements'],
             collapsedBlocks: {},
             actionsPanelCollapsed: false,
             actionsPanelPosition: { x: null, y: null },
             loadAdjustment: 0,
             combatSkillsCollapsedSections: {}, // Состояние сворачивания разделов боевых навыков
-            geo: 0 // Гео (аналог) - местная валюта персонажа
+            geo: 0, // Гео (аналог) - местная валюта персонажа
+            advancements: [] // Малые продвижения
         };
 
         this.init();
@@ -109,6 +110,7 @@ class CharacterSheet {
             combatSkills: JSON.parse(JSON.stringify(this.state.combatSkills)),
             paths: JSON.parse(JSON.stringify(this.state.paths)),
             charms: JSON.parse(JSON.stringify(this.state.charms)),
+            advancements: JSON.parse(JSON.stringify(this.state.advancements)),
             combatSkillsCollapsedSections: this.state.combatSkillsCollapsedSections
         };
 
@@ -131,6 +133,16 @@ class CharacterSheet {
 
                 // Обеспечиваем целостность модификаторов (для обратной совместимости)
                 this.ensureModifiersIntegrity();
+
+                // Добавляем advancements в blockOrder если его там нет
+                if (!this.state.blockOrder.includes('advancements')) {
+                    this.state.blockOrder.push('advancements');
+                }
+
+                // Инициализируем advancements если не существует
+                if (!this.state.advancements) {
+                    this.state.advancements = [];
+                }
 
                 console.log('Состояние загружено');
             } catch (e) {
@@ -216,6 +228,10 @@ class CharacterSheet {
                     if (window.charmsManager) {
                         window.charmsManager.renderBlock();
                         window.charmsManager.setupEventListeners();
+                    }
+                    if (window.advancementsManager) {
+                        window.advancementsManager.renderBlock();
+                        window.advancementsManager.setupEventListeners();
                     }
 
                     // Сохраняем состояние после всех обновлений
@@ -368,13 +384,13 @@ class CharacterSheet {
     renderBlocks() {
         const container = document.getElementById('blocksContainer');
         container.innerHTML = '';
-        
+
         // Рендерим блоки в сохраненном порядке
         this.state.blockOrder.forEach(blockId => {
             const blockElement = this.createBlockElement(blockId);
             if (blockElement) {
                 container.appendChild(blockElement);
-                
+
         // Восстанавливаем свернутое состояние
         if (this.state.collapsedBlocks[blockId]) {
             blockElement.classList.add('collapsed');
@@ -396,22 +412,29 @@ class CharacterSheet {
             'nonCombatSkills': { title: 'Умения', icon: 'fas fa-user-friends' },
             'combatSkills': { title: 'Боевые навыки', icon: 'fas fa-fist-raised' },
             'paths': { title: 'Ранги пути', icon: 'fas fa-road' },
-            'charms': { title: 'Амулеты', icon: 'fas fa-gem' }
+            'charms': { title: 'Амулеты', icon: 'fas fa-gem' },
+            'advancements': { title: 'Малые продвижения', icon: 'fas fa-arrow-up' }
         };
-        
+
         if (!blockTypes[blockId]) return null;
-        
+
         const block = document.createElement('div');
         block.className = 'block';
         block.id = `block-${blockId}`;
         block.draggable = true;
-        
+
         const blockType = blockTypes[blockId];
-        
+
+        // Добавляем кнопку примечания для блока "Малые продвижения"
+        const noteButton = blockId === 'advancements' 
+            ? `<button class="note-block-btn" title="Примечание"><i class="fas fa-info-circle"></i></button>` 
+            : '';
+
         block.innerHTML = `
             <div class="block-header">
                 <h2><i class="${blockType.icon}"></i> ${blockType.title}</h2>
                 <div class="block-controls">
+                    ${noteButton}
                     <button class="toggle-block" title="Свернуть/развернуть">
                         <i class="fas fa-chevron-up"></i>
                     </button>
@@ -437,7 +460,18 @@ class CharacterSheet {
                 icon.className = 'fas fa-chevron-up';
             }
         });
-        
+
+        // Добавляем обработчик для кнопки примечания (для блока "Малые продвижения")
+        const noteBtn = block.querySelector('.note-block-btn');
+        if (noteBtn) {
+            noteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (window.advancementsManager) {
+                    window.advancementsManager.showNote();
+                }
+            });
+        }
+
         return block;
     }
     
@@ -447,40 +481,43 @@ class CharacterSheet {
         Object.keys(this.state.characteristics.modifiers).forEach(key => {
             this.state.characteristics.modifiers[key] = 0;
         });
-        
+
         // Добавляем модификаторы от статусов
         this.state.statuses.forEach(status => {
             this.applyStatusModifiers(status);
         });
-        
+
         // Добавляем модификаторы от черт
         this.state.traits.forEach(trait => {
             this.applyTraitModifiers(trait);
         });
-        
+
         // Добавляем модификаторы от амулетов
         this.state.charms.forEach(charm => {
             if (charm.equipped) {
                 this.applyCharmModifiers(charm);
             }
         });
-        
+
         // Добавляем модификаторы от путей
         this.calculatePathBonuses();
 
+        // Добавляем модификаторы от малых продвижений
+        this.applyAdvancementModifiers();
+
         // Применяем эффекты голода
         this.applyHungerEffects();
-        
+
         // Обновляем отображение
         if (window.updateCharacteristicsDisplay) {
             window.updateCharacteristicsDisplay();
         }
-        
+
         // Обновляем другие блоки, которые зависят от характеристик
         if (window.updateEquipmentDisplay) {
             window.updateEquipmentDisplay();
         }
-        
+
         if (window.updateCharmsDisplay) {
             window.updateCharmsDisplay();
         }
@@ -534,7 +571,7 @@ class CharacterSheet {
     
     applyHungerEffects() {
         const satiety = this.state.characteristics.base.satiety;
-        
+
         if (satiety < -50 && satiety >= -100) {
             // -1 к главным характеристикам
             this.state.characteristics.modifiers.might -= 1;
@@ -542,6 +579,24 @@ class CharacterSheet {
             this.state.characteristics.modifiers.shell -= 1;
             this.state.characteristics.modifiers.grace -= 1;
         }
+    }
+
+    applyAdvancementModifiers() {
+        // Применяем модификаторы от малых продвижений
+        if (!this.state.advancements) return;
+
+        this.state.advancements.forEach(adv => {
+            if (adv.type === 'characteristic') {
+                const charId = adv.characteristicId;
+                if (this.state.characteristics.modifiers.hasOwnProperty(charId)) {
+                    this.state.characteristics.modifiers[charId] += adv.value;
+                }
+            } else if (adv.type === 'speed') {
+                this.state.characteristics.modifiers.speed += adv.value;
+            } else if (adv.type === 'load') {
+                this.state.characteristics.modifiers.load += adv.value;
+            }
+        });
     }
     
     // Восстановление души при отдыхе

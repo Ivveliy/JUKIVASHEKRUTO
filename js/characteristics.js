@@ -863,6 +863,34 @@ class CharacteristicsManager {
             }
         });
 
+        // Малые продвижения
+        if (characterSheet.state.advancements) {
+            characterSheet.state.advancements.forEach(adv => {
+                if (adv.type === 'characteristic' && adv.characteristicId === charId) {
+                    sources.push({
+                        type: 'Малое продвижение',
+                        name: `+${adv.value} к ${adv.characteristicName}`,
+                        value: adv.value,
+                        description: 'Малое продвижение: увеличение характеристики'
+                    });
+                } else if (adv.type === 'speed' && charId === 'speed') {
+                    sources.push({
+                        type: 'Малое продвижение',
+                        name: '+1 к Скорости',
+                        value: adv.value,
+                        description: 'Малое продвижение: увеличение скорости'
+                    });
+                } else if (adv.type === 'load' && charId === 'load') {
+                    sources.push({
+                        type: 'Малое продвижение',
+                        name: '+1 к Нагрузке',
+                        value: adv.value,
+                        description: 'Малое продвижение: увеличение нагрузки'
+                    });
+                }
+            });
+        }
+
         // Голод
         if (char.base.satiety < -50 && ['might', 'insight', 'shell', 'grace'].includes(charId)) {
             sources.push({
