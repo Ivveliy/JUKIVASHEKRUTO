@@ -26,10 +26,21 @@ class EquipmentManager {
         if (!content) return;
 
         content.innerHTML = `
+            <div class="geo-container" style="margin-bottom: 15px; padding: 10px; background-color: var(--light-bg); border-radius: var(--radius);">
+                <h3><i class="fas fa-coins"></i> Гео (аналог)</h3>
+                <div class="characteristic">
+                    <span class="char-name">Местная валюта</span>
+                    <div class="char-value">
+                        <input type="number" step="1" id="geo-input" class="form-control" style="width: 100px;"
+                               value="${characterSheet.state.geo || 0}" min="0">
+                    </div>
+                </div>
+            </div>
+
             <button class="add-btn" id="add-equipment-btn" style="margin-bottom: 15px;">
                 <i class="fas fa-plus"></i> Добавить снаряжение
             </button>
-            
+
             <div class="load-container">
                 <h3><i class="fas fa-weight-hanging"></i> Нагрузка</h3>
                 ${this.renderLoadDisplay()}
@@ -147,6 +158,7 @@ class EquipmentManager {
                 <div><small>Урон: ${item.damage || '0'} (${item.damageType || 'не указан'})</small></div>
                 ${item.range ? `<div><small>Дальность: ${item.range}</small></div>` : ''}
                 <div><small>Качество: ${item.quality || '1'}</small></div>
+                <div><small>Стоимость: ${item.cost || 0}</small></div>
             `;
             if (item.modifications) {
                 hasModifications = true;
@@ -170,6 +182,7 @@ class EquipmentManager {
                     </div>
                 </div>
                 ` : ''}
+                <div><small>Стоимость: ${item.cost || 0}</small></div>
             `;
             if (item.modifications) {
                 hasModifications = true;
@@ -177,6 +190,7 @@ class EquipmentManager {
             }
         } else {
             mainDetails = `<div class="item-description">${this.formatDescription(item.description || 'Описание отсутствует')}</div>`;
+            mainDetails += `<div><small>Стоимость: ${item.cost || 0}</small></div>`;
         }
 
         return `
@@ -282,6 +296,9 @@ class EquipmentManager {
                 characterSheet.state.loadAdjustment = newMaxLoad - totalMight - loadModifier;
                 characterSheet.saveState();
                 this.updateLoadDisplay();
+            } else if (e.target.id === 'geo-input') {
+                characterSheet.state.geo = parseInt(e.target.value) || 0;
+                characterSheet.saveState();
             }
         };
 
@@ -309,12 +326,18 @@ class EquipmentManager {
                     <label for="equipment-name">Название</label>
                     <input type="text" id="equipment-name" class="form-control" value="${equipment?.name || ''}" required>
                 </div>
-                
-                <div class="form-group">
-                    <label for="equipment-weight">Вес</label>
-                    <input type="number" step="0.5" min="0" id="equipment-weight" class="form-control" value="${equipment?.weight || 0}" required>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="equipment-weight">Вес</label>
+                        <input type="number" step="0.5" min="0" id="equipment-weight" class="form-control" value="${equipment?.weight || 0}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="equipment-cost">Стоимость</label>
+                        <input type="number" step="1" min="0" id="equipment-cost" class="form-control" value="${equipment?.cost || 0}" placeholder="0">
+                    </div>
                 </div>
-                
+
                 <!-- Поля для оружия -->
                 <div id="weapon-fields" style="display: ${equipment?.category === 'weapons' || !equipment ? 'block' : 'none'}">
                     <div class="form-row">
@@ -346,7 +369,7 @@ class EquipmentManager {
                         <textarea id="weapon-modifications" class="form-control" rows="2">${equipment?.modifications || ''}</textarea>
                     </div>
                 </div>
-                
+
                 <!-- Поля для брони -->
                 <div id="armor-fields" style="display: ${equipment?.category === 'armor' ? 'block' : 'none'}">
                     <div class="form-group">
@@ -366,7 +389,7 @@ class EquipmentManager {
                         <textarea id="armor-modifications" class="form-control" rows="2">${equipment?.modifications || ''}</textarea>
                     </div>
                 </div>
-                
+
                 <!-- Поля для прочего -->
                 <div id="other-fields" style="display: ${equipment?.category === 'other' ? 'block' : 'none'}">
                     <div class="form-group">
@@ -432,7 +455,8 @@ class EquipmentManager {
         let equipmentData = {
             category: category,
             name: document.getElementById('equipment-name').value,
-            weight: parseFloat(document.getElementById('equipment-weight').value) || 0
+            weight: parseFloat(document.getElementById('equipment-weight').value) || 0,
+            cost: parseInt(document.getElementById('equipment-cost').value) || 0
         };
         
         if (category === 'weapons') {

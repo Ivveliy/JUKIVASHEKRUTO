@@ -18,7 +18,8 @@ class CharacterSheet {
             actionsPanelCollapsed: false,
             actionsPanelPosition: { x: null, y: null },
             loadAdjustment: 0,
-            combatSkillsCollapsedSections: {} // Состояние сворачивания разделов боевых навыков
+            combatSkillsCollapsedSections: {}, // Состояние сворачивания разделов боевых навыков
+            geo: 0 // Гео (аналог) - местная валюта персонажа
         };
 
         this.init();
