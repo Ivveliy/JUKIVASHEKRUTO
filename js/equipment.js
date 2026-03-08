@@ -20,6 +20,8 @@ class EquipmentManager {
         this.renderBlock();
         this.setupEventListeners();
         window.updateEquipmentDisplay = () => this.updateLoadDisplay();
+        // Инициализация ширины полей после рендера
+        setTimeout(() => this.initInputWidths(), 0);
     }
 
     renderBlock() {
@@ -31,7 +33,7 @@ class EquipmentManager {
                 <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
                     <div class="geo-display">
                         <strong><i class="fas fa-coins"></i> Гео:</strong>
-                        <input type="number" step="1" id="geo-input" class="form-control" style="width: 80px; display: inline-block;"
+                        <input type="number" step="1" id="geo-input" class="compact-input"
                                value="${characterSheet.state.geo || 0}" min="0">
                     </div>
                     <div class="load-display">
@@ -62,10 +64,25 @@ class EquipmentManager {
 
         return `
             <span>${load.current} / ${maxLoad}</span>
-            <input type="number" step="0.5" id="max-load-input" class="form-control" style="width: 60px; margin-left: 8px; display: inline-block;"
+            <input type="number" step="0.5" id="max-load-input" class="compact-input"
                    value="${maxLoad}" min="0" title="Максимальная нагрузка">
             <small style="color: #666; margin-left: 8px;">(Мощь: ${totalMight}${loadModifier !== 0 ? (loadModifier > 0 ? ' + ' + loadModifier : ' - ' + Math.abs(loadModifier)) : ''}${loadAdjustment !== 0 ? (loadAdjustment > 0 ? ' + ' + loadAdjustment : ' - ' + Math.abs(loadAdjustment)) : ''})</small>
         `;
+    }
+
+    // Установить ширину поля на основе содержимого
+    setInputWidth(input) {
+        if (!input) return;
+        const value = input.value || '0';
+        // Создаём временный элемент для измерения ширины текста
+        const temp = document.createElement('span');
+        temp.style.cssText = 'visibility: hidden; position: absolute; white-space: nowrap; font-size: inherit; font-family: inherit; font-weight: inherit;';
+        temp.textContent = value;
+        document.body.appendChild(temp);
+        const width = temp.offsetWidth;
+        document.body.removeChild(temp);
+        // Устанавливаем ширину + отступы (padding 6px слева и справа) + запас для границы
+        input.style.width = (width + 20) + 'px';
     }
     
     renderEquipmentCategories() {
@@ -249,6 +266,7 @@ class EquipmentManager {
             if (e.target.id === 'geo-input') {
                 characterSheet.state.geo = parseInt(e.target.value) || 0;
                 characterSheet.saveState();
+                this.setInputWidth(e.target);
             }
         };
 
@@ -266,9 +284,23 @@ class EquipmentManager {
             }
         };
 
+        // Обработчик для установки ширины после изменения значения
+        this.blurHandler = (e) => {
+            if (e.target.classList.contains('compact-input')) {
+                this.setInputWidth(e.target);
+            }
+        };
+
         document.addEventListener('click', this.clickHandler);
         document.addEventListener('change', this.changeHandler);
         document.addEventListener('input', this.inputHandler);
+        document.addEventListener('blur', this.blurHandler, true);
+    }
+
+    // Инициализация ширины полей после рендера
+    initInputWidths() {
+        const inputs = document.querySelectorAll('.compact-input');
+        inputs.forEach(input => this.setInputWidth(input));
     }
 
     showEquipmentModal(equipmentIndex = null) {
@@ -471,6 +503,11 @@ class EquipmentManager {
             const loadDisplayElement = equipmentHeader.querySelector('.load-display');
             if (loadDisplayElement) {
                 loadDisplayElement.innerHTML = `<strong><i class="fas fa-weight-hanging"></i> Нагрузка:</strong>${loadDisplay}`;
+                // Устанавливаем ширину поля после обновления
+                setTimeout(() => {
+                    const maxLoadInput = document.getElementById('max-load-input');
+                    if (maxLoadInput) this.setInputWidth(maxLoadInput);
+                }, 0);
             }
         }
     }

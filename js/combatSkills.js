@@ -36,51 +36,43 @@ class CombatSkillsManager {
         const usedSlots = this.getActiveSkillsCount();
 
         return `
-            <div class="charm-slots-container" style="margin-bottom: 20px;">
-                <h3 style="display: flex; align-items: center; gap: 10px;">
-                    <i class="fas fa-book-open"></i>
-                    <span>Ячейки Техник</span>
-                </h3>
-                <div class="characteristic">
-                    <span class="char-name">Использовано ячеек</span>
-                    <div class="char-value">
-                        <span>${usedSlots} / ${totalSlots}</span>
+            <div class="technique-slots-compact" style="margin-bottom: 15px; padding: 10px; background-color: var(--light-bg); border-radius: var(--radius);">
+                <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+                    <div class="technique-slots-count">
+                        <strong><i class="fas fa-book-open"></i> Ячейки техник:</strong>
+                        <span style="margin-left: 8px;">${usedSlots} / ${totalSlots}</span>
+                        <input type="number" id="technique-slots-input" class="compact-input"
+                               value="${totalSlots}" min="0" title="Всего ячеек">
                     </div>
-                </div>
-                <div class="characteristic">
-                    <span class="char-name">Всего ячеек</span>
-                    <div class="char-value">
-                        <input type="number" id="technique-slots-input" class="form-control" style="width: 80px;"
-                               value="${totalSlots}" min="0">
+                    <div class="technique-slots-sources" style="font-size: 0.85em; color: #666;">
+                        <span>Проницательность: ${insightBonus}</span>
+                        ${advancementBonus > 0 ? `<span> • Продвижения: +${advancementBonus}</span>` : ''}
+                        ${manualAdjustment !== 0 ? `<span> • Корректировка: ${manualAdjustment > 0 ? '+' : ''}${manualAdjustment}</span>` : ''}
                     </div>
-                </div>
-                <div class="charm-sources" style="margin-top: 10px; padding: 10px; background-color: var(--light-bg); border-radius: var(--radius); font-size: 0.9em;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                        <span><i class="fas fa-brain"></i> От Проницательности:</span>
-                        <span>${insightBonus} (половина Проницательности)</span>
-                    </div>
-                    ${advancementBonus > 0 ? `
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                            <span><i class="fas fa-plus-circle"></i> От малых продвижений:</span>
-                            <span>+${advancementBonus}</span>
-                        </div>
-                    ` : ''}
-                    ${manualAdjustment !== 0 ? `
-                        <div style="display: flex; justify-content: space-between;">
-                            <span><i class="fas fa-edit"></i> Корректировка:</span>
-                            <span>${manualAdjustment > 0 ? '+' : ''}${manualAdjustment}</span>
-                        </div>
-                    ` : ''}
-                </div>
-                <div class="charm-slots" style="margin-top: 10px;">
-                    ${Array.from({length: totalSlots}, (_, i) => `
-                        <div class="charm-slot ${i < usedSlots ? 'filled' : ''}" title="${i < usedSlots ? 'Занято' : 'Свободно'}">
-                            ${i < usedSlots ? '<i class="fas fa-book"></i>' : i + 1}
-                        </div>
-                    `).join('')}
                 </div>
             </div>
         `;
+    }
+
+    // Установить ширину поля на основе содержимого
+    setInputWidth(input) {
+        if (!input) return;
+        const value = input.value || '0';
+        // Создаём временный элемент для измерения ширины текста
+        const temp = document.createElement('span');
+        temp.style.cssText = 'visibility: hidden; position: absolute; white-space: nowrap; font-size: inherit; font-family: inherit; font-weight: inherit;';
+        temp.textContent = value;
+        document.body.appendChild(temp);
+        const width = temp.offsetWidth;
+        document.body.removeChild(temp);
+        // Устанавливаем ширину + отступы (padding 6px слева и справа) + запас для границы
+        input.style.width = (width + 20) + 'px';
+    }
+
+    // Инициализация ширины полей после рендера
+    initInputWidths() {
+        const inputs = document.querySelectorAll('.compact-input');
+        inputs.forEach(input => this.setInputWidth(input));
     }
 
     // Форматирование текста описания: сохранение переносов и абзацев
@@ -428,7 +420,7 @@ class CombatSkillsManager {
                 this.toggleDescription(index);
             }
             // Изменение количества ячеек техники (ручная корректировка)
-            else if (e.target.id === 'technique-slots-input' && e.type === 'change') {
+            else if (e.target.id === 'technique-slots-input' && e.type === 'input') {
                 const newTotal = parseInt(e.target.value) || 0;
                 const insightBonus = this.getTechniqueSlotsTotal();
                 const advancementBonus = characterSheet.state.techniqueSlots || 0;
@@ -442,6 +434,18 @@ class CombatSkillsManager {
 
         block.addEventListener('click', this.clickHandler);
         block.addEventListener('change', this.clickHandler);
+        block.addEventListener('input', this.clickHandler);
+
+        // Обработчик для установки ширины после изменения значения
+        this.blurHandler = (e) => {
+            if (e.target.classList.contains('compact-input')) {
+                this.setInputWidth(e.target);
+            }
+        };
+        block.addEventListener('blur', this.blurHandler, true);
+
+        // Инициализация ширины полей
+        setTimeout(() => this.initInputWidths(), 0);
     }
 
     setFilter(filter) {
@@ -505,6 +509,11 @@ class CombatSkillsManager {
         // Просто перерисовываем весь блок для корректного обновления
         // Это гарантирует, что все данные будут актуальны
         this.renderBlock();
+        // Устанавливаем ширину поля после обновления
+        setTimeout(() => {
+            const input = document.getElementById('technique-slots-input');
+            if (input) this.setInputWidth(input);
+        }, 0);
     }
 
     showSkillModal(skillIndex = null) {

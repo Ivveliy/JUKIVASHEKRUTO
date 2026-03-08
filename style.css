@@ -447,6 +447,54 @@ body {
     color: var(--primary-color);
 }
 
+/* Компактное отображение ячеек техник */
+.technique-slots-compact {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.technique-slots-count {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.technique-slots-count strong {
+    color: var(--primary-color);
+}
+
+.technique-slots-sources {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* Компактное отображение слотов амулетов */
+.charm-slots-compact {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.charm-slots-count {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.charm-slots-count strong {
+    color: var(--primary-color);
+}
+
+.charm-slots-sources {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
 .item-weight-badge {
     background-color: rgba(0, 0, 0, 0.05);
     padding: 2px 6px;
@@ -1110,6 +1158,28 @@ body {
     border-radius: 4px;
     font-size: 1rem;
     transition: all 0.2s ease;
+}
+
+/* Адаптивные поля в компактных блоках - без границ и с фоном блока */
+.compact-input {
+    border: 1px solid var(--primary-color) !important;
+    background-color: var(--light-bg) !important;
+    padding: 4px 6px !important;
+    min-width: 30px;
+    width: auto;
+    display: inline-block;
+    text-align: right;
+    font-family: inherit;
+    font-size: inherit;
+    box-sizing: content-box;
+    border-radius: 4px;
+}
+
+.compact-input:focus {
+    outline: none;
+    background-color: #fff !important;
+    box-shadow: 0 0 0 2px var(--accent-blue);
+    border-color: var(--accent-blue) !important;
 }
 
 .form-control:hover {

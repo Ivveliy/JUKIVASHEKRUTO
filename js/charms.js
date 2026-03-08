@@ -35,17 +35,8 @@ class CharmsManager {
             <button class="add-btn" id="add-charm-btn" style="margin-bottom: 15px;">
                 <i class="fas fa-plus"></i> Добавить амулет
             </button>
-            
-            <div class="charm-slots-container">
-                <h3 style="display: flex; align-items: center; gap: 10px;">
-                    <i class="fas fa-sliders-h"></i>
-                    <span>Слоты для амулетов</span>
-                    <button class="char-btn char-details" id="slots-info">
-                        <i class="fas fa-info"></i>
-                    </button>
-                </h3>
-                ${this.renderSlotsDisplay()}
-            </div>
+
+            ${this.renderSlotsDisplay()}
 
             <div class="equipped-charms">
                 <h4>Надетые амулеты</h4>
@@ -69,48 +60,43 @@ class CharmsManager {
         const totalSlots = baseSlots + pathRanksBonus + manualAdjustment;
 
         return `
-            <div class="characteristic">
-                <span class="char-name">Использовано слотов</span>
-                <div class="char-value">
-                    <span>${equippedSlots} / ${totalSlots}</span>
-                </div>
-            </div>
-
-            <div class="characteristic">
-                <span class="char-name">Всего слотов</span>
-                <div class="char-value">
-                    <input type="number" id="charm-slots-input" class="form-control" style="width: 80px;"
-                           value="${totalSlots}" min="1">
-                </div>
-            </div>
-
-            <div class="charm-sources" style="margin-top: 10px; padding: 10px; background-color: var(--light-bg); border-radius: var(--radius); font-size: 0.9em;">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                    <span><i class="fas fa-book"></i> Базовое значение:</span>
-                    <span>${baseSlots}</span>
-                </div>
-                ${pathRanksBonus > 0 ? `
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                        <span><i class="fas fa-road"></i> Ранги путей:</span>
-                        <span>+${pathRanksBonus}</span>
+            <div class="charm-slots-compact" style="margin-bottom: 15px; padding: 10px; background-color: var(--light-bg); border-radius: var(--radius);">
+                <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+                    <div class="charm-slots-count">
+                        <strong><i class="fas fa-sliders-h"></i> Слоты амулетов:</strong>
+                        <span style="margin-left: 8px;">${equippedSlots} / ${totalSlots}</span>
+                        <input type="number" id="charm-slots-input" class="compact-input"
+                               value="${totalSlots}" min="1" title="Всего слотов">
                     </div>
-                ` : ''}
-                ${manualAdjustment !== 0 ? `
-                    <div style="display: flex; justify-content: space-between;">
-                        <span><i class="fas fa-edit"></i> Корректировка:</span>
-                        <span>${manualAdjustment > 0 ? '+' : ''}${manualAdjustment}</span>
+                    <div class="charm-slots-sources" style="font-size: 0.85em; color: #666;">
+                        <span>База: ${baseSlots}</span>
+                        ${pathRanksBonus > 0 ? `<span> • Пути: +${pathRanksBonus}</span>` : ''}
+                        ${manualAdjustment !== 0 ? `<span> • Корректировка: ${manualAdjustment > 0 ? '+' : ''}${manualAdjustment}</span>` : ''}
                     </div>
-                ` : ''}
-            </div>
-
-            <div class="charm-slots">
-                ${Array.from({length: totalSlots}, (_, i) => `
-                    <div class="charm-slot ${i < equippedSlots ? 'filled' : ''}">
-                        ${i < equippedSlots ? '<i class="fas fa-gem"></i>' : i + 1}
-                    </div>
-                `).join('')}
+                </div>
             </div>
         `;
+    }
+
+    // Установить ширину поля на основе содержимого
+    setInputWidth(input) {
+        if (!input) return;
+        const value = input.value || '0';
+        // Создаём временный элемент для измерения ширины текста
+        const temp = document.createElement('span');
+        temp.style.cssText = 'visibility: hidden; position: absolute; white-space: nowrap; font-size: inherit; font-family: inherit; font-weight: inherit;';
+        temp.textContent = value;
+        document.body.appendChild(temp);
+        const width = temp.offsetWidth;
+        document.body.removeChild(temp);
+        // Устанавливаем ширину + отступы (padding 6px слева и справа) + запас для границы
+        input.style.width = (width + 20) + 'px';
+    }
+
+    // Инициализация ширины полей после рендера
+    initInputWidths() {
+        const inputs = document.querySelectorAll('.compact-input');
+        inputs.forEach(input => this.setInputWidth(input));
     }
     
     renderCharmsList(equippedOnly) {
@@ -208,8 +194,6 @@ class CharmsManager {
         this.clickHandler = (e) => {
             if (e.target.closest('#add-charm-btn')) {
                 this.showCharmModal();
-            } else if (e.target.closest('#slots-info')) {
-                this.showSlotsExplanation();
             } else if (e.target.closest('.edit-charm')) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -248,10 +232,57 @@ class CharmsManager {
         };
 
         block.addEventListener('click', this.clickHandler);
+        block.addEventListener('input', this.clickHandler);
+    }
 
-        // Изменение количества слотов
-        document.addEventListener('change', (e) => {
-            if (e.target.id === 'charm-slots-input') {
+    setupEventListeners() {
+        const block = document.getElementById('content-charms');
+        if (!block) return;
+
+        // Remove existing click handler if it exists
+        if (this.clickHandler) {
+            block.removeEventListener('click', this.clickHandler);
+            block.removeEventListener('input', this.clickHandler);
+        }
+
+        this.clickHandler = (e) => {
+            if (e.target.closest('#add-charm-btn')) {
+                this.showCharmModal();
+            } else if (e.target.closest('.edit-charm')) {
+                e.preventDefault();
+                e.stopPropagation();
+                const index = parseInt(e.target.closest('.list-item').dataset.index);
+                this.showCharmModal(index);
+            } else if (e.target.closest('.remove-charm')) {
+                e.preventDefault();
+                e.stopPropagation();
+                const button = e.target.closest('.remove-charm');
+                const index = parseInt(button.closest('.list-item').dataset.index);
+                button.disabled = true;
+                if (confirm('Удалить этот амулет?')) {
+                    this.removeCharm(index);
+                } else {
+                    button.disabled = false;
+                }
+            } else if (e.target.closest('.charm-equip')) {
+                const checkbox = e.target.closest('.charm-equip');
+                const index = parseInt(checkbox.dataset.index);
+                this.toggleCharmEquip(index, checkbox.checked);
+            } else if (e.target.closest('.charm-equip-checkbox')) {
+                // Клик по label с иконкой тоже переключает чекбокс
+                const checkbox = e.target.closest('.charm-equip-checkbox').querySelector('.charm-equip');
+                if (checkbox) {
+                    const index = parseInt(checkbox.dataset.index);
+                    this.toggleCharmEquip(index, !checkbox.checked);
+                }
+            } else if (e.target.closest('.charm-desc-toggle')) {
+                e.preventDefault();
+                e.stopPropagation();
+                const btn = e.target.closest('.charm-desc-toggle');
+                const listItem = btn.closest('.list-item');
+                const index = parseInt(listItem.dataset.index);
+                this.toggleCharmDescription(index);
+            } else if (e.target.id === 'charm-slots-input' && e.type === 'input') {
                 const newTotal = parseInt(e.target.value) || 3;
                 const baseSlots = 3;
                 const pathRanksBonus = this.getPathRanksBonus();
@@ -260,7 +291,21 @@ class CharmsManager {
                 characterSheet.saveState();
                 this.updateSlotsDisplay();
             }
-        });
+        };
+
+        block.addEventListener('click', this.clickHandler);
+        block.addEventListener('input', this.clickHandler);
+
+        // Обработчик для установки ширины после изменения значения
+        this.blurHandler = (e) => {
+            if (e.target.classList.contains('compact-input')) {
+                this.setInputWidth(e.target);
+            }
+        };
+        block.addEventListener('blur', this.blurHandler, true);
+
+        // Инициализация ширины полей
+        setTimeout(() => this.initInputWidths(), 0);
     }
     
     showCharmModal(charmIndex = null) {
@@ -511,34 +556,18 @@ class CharmsManager {
     }
     
     updateSlotsDisplay() {
-        const slotsContainer = document.querySelector('.charm-slots-container');
-        if (slotsContainer) {
-            slotsContainer.innerHTML = `<h3><i class="fas fa-sliders-h"></i> Слоты для амулетов</h3>${this.renderSlotsDisplay()}`;
-
-            // Обновляем обработчик изменения слотов
-            document.getElementById('charm-slots-input')?.addEventListener('change', (e) => {
-                const newTotal = parseInt(e.target.value) || 3;
-                const baseSlots = 3;
-                const pathRanksBonus = this.getPathRanksBonus();
-                // Сохраняем только ручную корректировку
-                characterSheet.state.charmSlots = newTotal - baseSlots - pathRanksBonus;
-                characterSheet.saveState();
-                this.updateSlotsDisplay();
-            });
+        const charmsBlock = document.getElementById('content-charms');
+        if (charmsBlock) {
+            const slotsDisplayElement = charmsBlock.querySelector('.charm-slots-compact');
+            if (slotsDisplayElement) {
+                slotsDisplayElement.outerHTML = this.renderSlotsDisplay();
+                // Устанавливаем ширину поля после обновления
+                setTimeout(() => {
+                    const input = document.getElementById('charm-slots-input');
+                    if (input) this.setInputWidth(input);
+                }, 0);
+            }
         }
-    }
-    
-    showSlotsExplanation() {
-        const explanationContent = `
-            <div style="text-align: center; padding: 20px;">
-                <p style="font-size: 1.1em; line-height: 1.6;">
-                    Жуки начинают с 3 меток плюс Ранг их Пути. Метки используются для надевания Амулетов и иногда для управления приспешниками.
-                </p>
-            </div>
-        `;
-
-        const modal = this.createExplanationModal('Пояснение о слотах', explanationContent);
-        document.body.appendChild(modal);
     }
 
     createExplanationModal(title, content) {
