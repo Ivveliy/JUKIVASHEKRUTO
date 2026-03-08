@@ -503,6 +503,192 @@ body {
     color: var(--primary-color);
 }
 
+/* Bold заголовки полей в боевых навыках */
+.skill-field-label {
+    font-weight: bold;
+}
+
+/* Иконки категорий снаряжения */
+.equipment-icon {
+    margin-right: 6px;
+    color: var(--primary-color);
+}
+
+/* Значок нагрузки рядом с весом */
+.weight-icon {
+    margin-left: 4px;
+    font-size: 0.75em;
+    color: #666;
+}
+
+/* Иконки для полей боевых навыков */
+.skill-field-icon {
+    margin-right: 5px;
+    width: 16px;
+    display: inline-block;
+}
+
+/* Значение характеристики - жирное, увеличенное */
+.char-value-display {
+    font-weight: bold;
+    font-size: 1.1em;
+    margin-left: 4px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Увеличенный текст веса в снаряжении */
+.equipment-weight {
+    font-size: 1em;
+    font-weight: 500;
+}
+
+/* Переключатель "используется" для снаряжения */
+.equipment-use-toggle {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    margin-right: 8px;
+}
+
+.equipment-use-toggle input[type="checkbox"] {
+    display: none;
+}
+
+.equipment-use-toggle i {
+    font-size: 1.2rem;
+    transition: all 0.2s ease;
+}
+
+/* Не используется - серый крест */
+.equipment-use-toggle i.fa-times-circle {
+    color: #95a5a6;
+    opacity: 0.4;
+}
+
+/* Используется - зелёная галочка */
+.equipment-use-toggle i.fa-check-circle {
+    color: var(--accent-green);
+    opacity: 1;
+}
+
+/* Счётчик количества предметов */
+.item-quantity-control {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-left: 8px;
+}
+
+.item-quantity-btn {
+    width: 24px;
+    height: 24px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--light-bg);
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.item-quantity-btn:hover {
+    background-color: var(--accent-blue);
+    color: white;
+    border-color: var(--accent-blue);
+}
+
+.item-quantity-display {
+    min-width: 30px;
+    text-align: center;
+    font-weight: 500;
+}
+
+/* Индикатор общей стоимости раздела */
+.category-total-cost {
+    font-size: 0.85em;
+    color: #666;
+    margin-left: 10px;
+    font-weight: normal;
+}
+
+.category-total-cost i {
+    color: #f39c12;
+    margin-right: 3px;
+}
+
+/* Цвета качества предметов */
+.quality-negative {
+    color: #c0392b;
+}
+
+.quality-0 {
+    color: #333;
+}
+
+.quality-1 {
+    color: #27ae60;
+}
+
+.quality-2 {
+    color: #2980b9;
+}
+
+.quality-3 {
+    color: #8e44ad;
+}
+
+.quality-4 {
+    color: #d35400;
+}
+
+.quality-high {
+    color: #d35400;
+}
+
+/* Иконки полей снаряжения */
+.equipment-field-icon {
+    margin-right: 5px;
+    width: 16px;
+    display: inline-block;
+    color: var(--primary-color);
+}
+
+/* Цвета редкости амулетов */
+.rarity-common {
+    color: #333;
+}
+
+.rarity-uncommon {
+    color: #27ae60;
+}
+
+.rarity-rare {
+    color: #2980b9;
+}
+
+.rarity-unique {
+    color: #8e44ad;
+}
+
+.rarity-legendary {
+    color: #d35400;
+}
+
+.rarity-cursed {
+    color: #8b0000;
+}
+
+.rarity-fragile {
+    color: transparent;
+    -webkit-text-stroke: 1px #666;
+    text-stroke: 1px #666;
+}
+
 .item-compact-details {
     margin-top: 6px;
     color: #666;

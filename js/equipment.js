@@ -103,9 +103,21 @@ class EquipmentManager {
 
         Object.entries(categories).forEach(([key, category]) => {
             if (category.items.length > 0) {
+                // Рассчитываем общую стоимость категории
+                const totalCost = category.items.reduce((sum, item) => {
+                    const itemCost = item.cost || 0;
+                    const quantity = item.quantity || 1;
+                    return sum + (itemCost * quantity);
+                }, 0);
+
                 html += `
                     <div class="equipment-category">
-                        <h4>${category.name}</h4>
+                        <h4>
+                            ${category.name}
+                            <span class="category-total-cost">
+                                <i class="fas fa-coins"></i> ${totalCost} гео
+                            </span>
+                        </h4>
                         ${category.items.map((item) => {
                             const globalIndex = characterSheet.state.equipment.findIndex(eq => eq === item);
                             return this.renderEquipmentItem(item, globalIndex);
@@ -127,18 +139,41 @@ class EquipmentManager {
         let modifications = '';
         let hasModifications = false;
 
+        // Определяем иконку в зависимости от категории
+        let equipmentIcon = '';
         if (item.category === 'weapons') {
-            // Компактное отображение: Тип | Урон | Дальность | Качество
+            equipmentIcon = '<i class="fas fa-sword equipment-icon"></i>';
+        } else if (item.category === 'armor') {
+            equipmentIcon = '<i class="fas fa-shield-alt equipment-icon"></i>';
+        } else {
+            equipmentIcon = '<i class="fas fa-box equipment-icon"></i>';
+        }
+
+        // Инициализируем used для старых предметов (обратная совместимость)
+        if (item.used === undefined) {
+            item.used = false;
+        }
+
+        // Инициализируем quantity для старых предметов (обратная совместимость)
+        if (item.quantity === undefined) {
+            item.quantity = 1;
+        }
+
+        // Получаем класс качества
+        const qualityClass = this.getQualityClass(item.quality || 1);
+
+        if (item.category === 'weapons') {
+            // Компактное отображение: Тип | Урон | Дальность | Качество | Стоимость
             let detailsParts = [
-                `${item.weaponType || 'Не указан'}`,
-                `${item.damage || '0'} (${item.damageType || 'не указан'})`
+                `<i class="fas fa-khanda equipment-field-icon"></i>${item.weaponType || 'Не указан'}`,
+                `<i class="fas fa-crosshairs equipment-field-icon"></i>${item.damage || '0'} (${item.damageType || 'не указан'})`
             ];
-            if (item.range) detailsParts.push(`${item.range}`);
-            detailsParts.push(`Качество: ${item.quality || '1'}`);
-            detailsParts.push(`${item.cost || 0} гео`);
-            
+            if (item.range) detailsParts.push(`<i class="fas fa-arrows-alt equipment-field-icon"></i>${item.range}`);
+            detailsParts.push(`<i class="fas fa-star equipment-field-icon"></i><span class="${qualityClass}">Качество: ${item.quality || '1'}</span>`);
+            detailsParts.push(`<i class="fas fa-coins equipment-field-icon"></i>${item.cost || 0} гео`);
+
             compactDetails = `<div class="item-compact-details"><small>${detailsParts.join(' • ')}</small></div>`;
-            
+
             if (item.modifications) {
                 hasModifications = true;
                 modifications = `<div><small>Модификации: ${item.modifications}</small></div>`;
@@ -146,33 +181,59 @@ class EquipmentManager {
         } else if (item.category === 'armor') {
             // Компактное отображение: ПУ | Качество | Прочность | Стоимость
             let detailsParts = [
-                `ПУ: ${item.absorption || '0'}`,
-                `Качество: ${item.quality || '1'}`
+                `<i class="fas fa-shield-alt equipment-field-icon"></i>ПУ: ${item.absorption || '0'}`,
+                `<i class="fas fa-star equipment-field-icon"></i><span class="${qualityClass}">Качество: ${item.quality || '1'}</span>`
             ];
             if (item.durability !== undefined) {
-                detailsParts.push(`Прочность: ${item.durability}`);
+                detailsParts.push(`<i class="fas fa-heart equipment-field-icon"></i>Прочность: ${item.durability}`);
             }
-            detailsParts.push(`${item.cost || 0} гео`);
-            
+            detailsParts.push(`<i class="fas fa-coins equipment-field-icon"></i>${item.cost || 0} гео`);
+
             compactDetails = `<div class="item-compact-details"><small>${detailsParts.join(' • ')}</small></div>`;
-            
+
             if (item.modifications) {
                 hasModifications = true;
                 modifications = `<div><small>Модификации: ${item.modifications}</small></div>`;
             }
         } else {
-            // Для прочего - только описание если есть
-            compactDetails = item.description ? 
-                `<div class="item-compact-details"><small>${item.description.substring(0, 100)}${item.description.length > 100 ? '...' : ''}</small></div>` : 
-                `<div class="item-compact-details"><small>Стоимость: ${item.cost || 0} гео</small></div>`;
+            // Для прочего - описание и стоимость
+            let otherDetailsParts = [];
+            if (item.description) {
+                otherDetailsParts.push(`<i class="fas fa-scroll equipment-field-icon"></i>${item.description.substring(0, 100)}${item.description.length > 100 ? '...' : ''}`);
+            }
+            otherDetailsParts.push(`<i class="fas fa-coins equipment-field-icon"></i>${item.cost || 0} гео`);
+            compactDetails = `<div class="item-compact-details"><small>${otherDetailsParts.join(' • ')}</small></div>`;
         }
+
+        // Переключатель "используется" для оружия и брони
+        const useToggle = (item.category === 'weapons' || item.category === 'armor') ? `
+            <label class="equipment-use-toggle" title="${item.used ? 'Не используется' : 'Используется'}">
+                <input type="checkbox" class="equipment-use-checkbox" data-index="${index}" ${item.used ? 'checked' : ''}>
+                <i class="fas ${item.used ? 'fa-check-circle' : 'fa-times-circle'}"></i>
+            </label>
+        ` : '';
+
+        // Счётчик количества для прочего
+        const quantityControl = item.category === 'other' ? `
+            <div class="item-quantity-control" title="Количество предметов">
+                <button type="button" class="item-quantity-btn" data-index="${index}" data-action="dec">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <span class="item-quantity-display">${item.quantity} шт.</span>
+                <button type="button" class="item-quantity-btn" data-index="${index}" data-action="inc">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+        ` : '';
 
         return `
             <div class="list-item" data-index="${index}">
                 <div>
                     <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
-                        <strong>${item.name}</strong>
-                        <span class="item-weight-badge"><small>${item.weight || 0}</small></span>
+                        ${useToggle}
+                        ${equipmentIcon}<strong class="equipment-weight">${item.name}</strong>
+                        <span class="item-weight-badge equipment-weight"><small>${item.weight || 0}</small><i class="fas fa-weight-hanging weight-icon"></i></span>
+                        ${quantityControl}
                     </div>
                     ${compactDetails}
                     ${hasModifications ? `
@@ -197,7 +258,18 @@ class EquipmentManager {
             </div>
         `;
     }
-    
+
+    getQualityClass(quality) {
+        const q = parseInt(quality) || 0;
+        if (q < 0) return 'quality-negative';
+        if (q === 0) return 'quality-0';
+        if (q === 1) return 'quality-1';
+        if (q === 2) return 'quality-2';
+        if (q === 3) return 'quality-3';
+        if (q >= 4) return 'quality-4';
+        return 'quality-1';
+    }
+
     setupEventListeners() {
         // Удаляем старые обработчики если они есть
         if (this.clickHandler) {
@@ -259,6 +331,27 @@ class EquipmentManager {
                 e.stopPropagation();
                 const index = parseInt(e.target.closest('.durability-inc').dataset.index);
                 this.changeDurability(index, 1);
+            } else if (e.target.closest('.equipment-use-checkbox')) {
+                e.preventDefault();
+                e.stopPropagation();
+                const checkbox = e.target.closest('.equipment-use-checkbox');
+                const index = parseInt(checkbox.dataset.index);
+                this.toggleEquipmentUse(index, checkbox.checked);
+            } else if (e.target.closest('.equipment-use-toggle')) {
+                // Клик по label тоже переключает
+                e.preventDefault();
+                e.stopPropagation();
+                const toggle = e.target.closest('.equipment-use-toggle');
+                const checkbox = toggle.querySelector('.equipment-use-checkbox');
+                const index = parseInt(checkbox.dataset.index);
+                this.toggleEquipmentUse(index, !checkbox.checked);
+            } else if (e.target.closest('.item-quantity-btn')) {
+                e.preventDefault();
+                e.stopPropagation();
+                const btn = e.target.closest('.item-quantity-btn');
+                const index = parseInt(btn.dataset.index);
+                const action = btn.dataset.action;
+                this.changeQuantity(index, action === 'inc' ? 1 : -1);
             }
         };
 
@@ -314,10 +407,14 @@ class EquipmentManager {
     }
 
     showEquipmentModal(equipmentIndex = null) {
-        const equipment = equipmentIndex !== null ? 
-            characterSheet.state.equipment[equipmentIndex] : 
+        const equipment = equipmentIndex !== null ?
+            characterSheet.state.equipment[equipmentIndex] :
             null;
-        
+
+        // Инициализируем used и quantity для старых предметов
+        const used = equipment?.used || false;
+        const quantity = equipment?.quantity || 1;
+
         const modalContent = `
             <form id="equipment-form">
                 <div class="form-group">
@@ -328,7 +425,7 @@ class EquipmentManager {
                         <option value="other" ${equipment?.category === 'other' ? 'selected' : ''}>Прочее</option>
                     </select>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="equipment-name">Название</label>
                     <input type="text" id="equipment-name" class="form-control" value="${equipment?.name || ''}" required>
@@ -336,11 +433,11 @@ class EquipmentManager {
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="equipment-weight">Вес</label>
+                        <label for="equipment-weight"><i class="fas fa-weight-hanging equipment-field-icon"></i>Вес</label>
                         <input type="number" step="0.5" min="0" id="equipment-weight" class="form-control" value="${equipment?.weight || 0}" required>
                     </div>
                     <div class="form-group">
-                        <label for="equipment-cost">Стоимость</label>
+                        <label for="equipment-cost"><i class="fas fa-coins equipment-field-icon"></i>Стоимость</label>
                         <input type="number" step="1" min="0" id="equipment-cost" class="form-control" value="${equipment?.cost || 0}" placeholder="0">
                     </div>
                 </div>
@@ -349,59 +446,75 @@ class EquipmentManager {
                 <div id="weapon-fields" style="display: ${equipment?.category === 'weapons' || !equipment ? 'block' : 'none'}">
                     <div class="form-row">
                         <div class="form-group" style="flex: 2;">
-                            <label for="weapon-type">Тип оружия</label>
+                            <label for="weapon-type"><i class="fas fa-khanda equipment-field-icon"></i>Тип оружия</label>
                             <input type="text" id="weapon-type" class="form-control" value="${equipment?.weaponType || ''}">
                         </div>
                         <div class="form-group" style="flex: 1;">
-                            <label for="weapon-range">Дальность</label>
+                            <label for="weapon-range"><i class="fas fa-arrows-alt equipment-field-icon"></i>Дальность</label>
                             <input type="text" id="weapon-range" class="form-control" value="${equipment?.range || ''}" placeholder="например: 1-3">
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="weapon-damage">Урон</label>
+                            <label for="weapon-damage"><i class="fas fa-crosshairs equipment-field-icon"></i>Урон</label>
                             <input type="text" id="weapon-damage" class="form-control" value="${equipment?.damage || ''}" placeholder="1d6">
                         </div>
                         <div class="form-group">
-                            <label for="weapon-damage-type">Тип урона</label>
+                            <label for="weapon-damage-type"><i class="fas fa-sword equipment-field-icon"></i>Тип урона</label>
                             <input type="text" id="weapon-damage-type" class="form-control" value="${equipment?.damageType || ''}" placeholder="рубящий">
                         </div>
                         <div class="form-group">
-                            <label for="weapon-quality">Качество</label>
+                            <label for="weapon-quality"><i class="fas fa-star equipment-field-icon"></i>Качество</label>
                             <input type="number" step="1" min="1" id="weapon-quality" class="form-control" value="${equipment?.quality || 1}">
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="weapon-modifications">Модификации</label>
+                        <label for="weapon-modifications"><i class="fas fa-wrench equipment-field-icon"></i>Модификации</label>
                         <textarea id="weapon-modifications" class="form-control" rows="2">${equipment?.modifications || ''}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="weapon-used" ${used ? 'checked' : ''}>
+                            <i class="fas fa-check-circle equipment-field-icon"></i>Используется
+                        </label>
                     </div>
                 </div>
 
                 <!-- Поля для брони -->
                 <div id="armor-fields" style="display: ${equipment?.category === 'armor' ? 'block' : 'none'}">
                     <div class="form-group">
-                        <label for="armor-absorption">Поглощение урона (ПУ)</label>
+                        <label for="armor-absorption"><i class="fas fa-shield-alt equipment-field-icon"></i>Поглощение урона (ПУ)</label>
                         <input type="text" id="armor-absorption" class="form-control" value="${equipment?.absorption || ''}">
                     </div>
                     <div class="form-group">
-                        <label for="armor-quality">Качество</label>
+                        <label for="armor-quality"><i class="fas fa-star equipment-field-icon"></i>Качество</label>
                         <input type="number" step="1" min="1" id="armor-quality" class="form-control" value="${equipment?.quality || 1}">
                     </div>
                     <div class="form-group">
-                        <label for="armor-durability">Прочность</label>
+                        <label for="armor-durability"><i class="fas fa-heart equipment-field-icon"></i>Прочность</label>
                         <input type="text" id="armor-durability" class="form-control" value="${equipment?.durability || ''}" placeholder="например: 5/5">
                     </div>
                     <div class="form-group">
-                        <label for="armor-modifications">Модификации</label>
+                        <label for="armor-modifications"><i class="fas fa-wrench equipment-field-icon"></i>Модификации</label>
                         <textarea id="armor-modifications" class="form-control" rows="2">${equipment?.modifications || ''}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="armor-used" ${used ? 'checked' : ''}>
+                            <i class="fas fa-check-circle equipment-field-icon"></i>Используется
+                        </label>
                     </div>
                 </div>
 
                 <!-- Поля для прочего -->
                 <div id="other-fields" style="display: ${equipment?.category === 'other' ? 'block' : 'none'}">
                     <div class="form-group">
-                        <label for="other-description">Описание</label>
+                        <label for="other-description"><i class="fas fa-scroll equipment-field-icon"></i>Описание</label>
                         <textarea id="other-description" class="form-control" rows="3">${equipment?.description || ''}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="other-quantity"><i class="fas fa-layer-group equipment-field-icon"></i>Количество</label>
+                        <input type="number" step="1" min="1" id="other-quantity" class="form-control" value="${quantity}">
                     </div>
                 </div>
             </form>
@@ -443,7 +556,30 @@ class EquipmentManager {
         characterSheet.saveState();
         this.renderBlock();
     }
-    
+
+    toggleEquipmentUse(index, used) {
+        const item = characterSheet.state.equipment[index];
+        if (!item) return;
+
+        item.used = used;
+        characterSheet.saveState();
+        this.renderBlock();
+    }
+
+    changeQuantity(index, amount) {
+        const item = characterSheet.state.equipment[index];
+        if (!item || item.category !== 'other') return;
+
+        // Инициализируем количество если нет
+        if (item.quantity === undefined) {
+            item.quantity = 1;
+        }
+
+        item.quantity = Math.max(1, item.quantity + amount);
+        characterSheet.saveState();
+        this.renderBlock();
+    }
+
     updateEquipmentFields(category) {
         const weaponFields = document.getElementById('weapon-fields');
         const armorFields = document.getElementById('armor-fields');
@@ -457,7 +593,7 @@ class EquipmentManager {
     saveEquipment(equipmentIndex = null) {
         const form = document.getElementById('equipment-form');
         if (!form) return;
-        
+
         const category = document.getElementById('equipment-category').value;
         let equipmentData = {
             category: category,
@@ -465,7 +601,7 @@ class EquipmentManager {
             weight: parseFloat(document.getElementById('equipment-weight').value) || 0,
             cost: parseInt(document.getElementById('equipment-cost').value) || 0
         };
-        
+
         if (category === 'weapons') {
             equipmentData.weaponType = document.getElementById('weapon-type').value;
             equipmentData.range = document.getElementById('weapon-range').value;
@@ -473,25 +609,28 @@ class EquipmentManager {
             equipmentData.damageType = document.getElementById('weapon-damage-type').value;
             equipmentData.quality = parseInt(document.getElementById('weapon-quality').value) || 1;
             equipmentData.modifications = document.getElementById('weapon-modifications').value;
+            equipmentData.used = document.getElementById('weapon-used').checked;
         } else if (category === 'armor') {
             equipmentData.absorption = document.getElementById('armor-absorption').value;
             equipmentData.quality = parseInt(document.getElementById('armor-quality').value) || 1;
             equipmentData.durability = document.getElementById('armor-durability').value;
             equipmentData.modifications = document.getElementById('armor-modifications').value;
+            equipmentData.used = document.getElementById('armor-used').checked;
         } else if (category === 'other') {
             equipmentData.description = document.getElementById('other-description').value;
+            equipmentData.quantity = parseInt(document.getElementById('other-quantity').value) || 1;
         }
-        
+
         if (equipmentIndex !== null) {
             characterSheet.state.equipment[equipmentIndex] = equipmentData;
         } else {
             characterSheet.state.equipment.push(equipmentData);
         }
-        
+
         characterSheet.saveState();
         this.renderBlock();
         characterSheet.updateAllCharacteristics();
-        
+
         document.querySelector('.modal.active')?.remove();
     }
     

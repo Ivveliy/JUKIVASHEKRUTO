@@ -118,6 +118,9 @@ class CharmsManager {
         const mods = this.getCharmModifiersText(charm);
         const hasDescription = charm.description && charm.description.trim() !== '';
 
+        // Определяем класс редкости
+        const rarityClass = this.getRarityClass(charm.rarity);
+
         return `
             <div class="list-item" data-index="${index}">
                 <div style="flex-grow: 1;">
@@ -125,12 +128,12 @@ class CharmsManager {
                         <div style="flex-grow: 1;">
                             <strong>${charm.name}</strong>
                             <div style="margin-top: 5px;">
-                                <small>Редкость: ${charm.rarity || 'Обычный'}</small>
+                                <small><span class="skill-field-label">Редкость:</span> <span class="${rarityClass}">${charm.rarity || 'Обычный'}</span></small>
                             </div>
                             <div>
-                                <small>Стоимость: ${charm.cost || 0} Geo</small>
+                                <small><span class="skill-field-label">Стоимость:</span> ${charm.cost || 0} Geo</small>
                                 <span style="margin: 0 5px;">•</span>
-                                <small>Слотов: ${charm.slots || 1}</small>
+                                <small><span class="skill-field-label">Слотов:</span> ${charm.slots || 1}</small>
                             </div>
                             ${mods ? `<div style="margin-top: 5px;"><small>${mods}</small></div>` : ''}
                             ${hasDescription ? `
@@ -171,15 +174,28 @@ class CharmsManager {
             attractiveness: 'Привлекательность', horror: 'Жуть', speed: 'Скорость',
             heart: 'Сердца', endurance: 'Выносливость', soul: 'Душа', hunger: 'Голод'
         };
-        
+
         const mods = [];
         Object.entries(charm.modifiers || {}).forEach(([key, value]) => {
             if (value !== 0 && charNames[key]) {
                 mods.push(`${charNames[key]} ${value > 0 ? '+' : ''}${value}`);
             }
         });
-        
+
         return mods.join(', ');
+    }
+
+    getRarityClass(rarity) {
+        const classes = {
+            'ОБЫЧНЫЙ': 'rarity-common',
+            'НЕОБЫЧНЫЙ': 'rarity-uncommon',
+            'РЕДКИЙ': 'rarity-rare',
+            'УНИКАЛЬНЫЙ': 'rarity-unique',
+            'ЛЕГЕНДАРНЫЙ': 'rarity-legendary',
+            'ПРОКЛЯТЫЙ': 'rarity-cursed',
+            'ХРУПКИЙ': 'rarity-fragile'
+        };
+        return classes[rarity] || 'rarity-common';
     }
     
     setupEventListeners() {

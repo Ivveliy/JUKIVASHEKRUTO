@@ -251,19 +251,21 @@ class CombatSkillsManager {
         let details = '';
 
         if (skill.type === 'combat') {
+            const attackCharValue = this.getCharacteristicValue(skill.attackChar);
             details = `
-                <div><small>Характеристика атаки: ${this.getCharacteristicName(skill.attackChar)}</small></div>
-                <div><small>Стоимость: ${skill.soulCost || 0} души, ${skill.enduranceCost || 0} выносливости</small></div>
-                ${skill.weaponName ? `<div><small>Оружие: ${skill.weaponName}</small></div>` : ''}
-                ${skill.damage ? `<div><small>Урон: ${skill.damage}</small></div>` : ''}
+                <div><small><i class="fas fa-bullseye skill-field-icon"></i><span class="skill-field-label">Характеристика атаки:</span> ${this.getCharacteristicName(skill.attackChar)} <span class="char-value-display">${attackCharValue}</span></small></div>
+                <div><small><i class="fas fa-coins skill-field-icon"></i><span class="skill-field-label">Стоимость:</span> ${skill.soulCost || 0} души, ${skill.enduranceCost || 0} выносливости</small></div>
+                ${skill.weaponName ? `<div><small><i class="fas fa-sword skill-field-icon"></i><span class="skill-field-label">Оружие:</span> ${skill.weaponName}</small></div>` : ''}
+                ${skill.damage ? `<div><small><i class="fas fa-burst skill-field-icon"></i><span class="skill-field-label">Урон:</span> ${skill.damage}</small></div>` : ''}
             `;
         } else if (skill.type === 'magic') {
+            const attackCharValue = this.getCharacteristicValue(skill.attackChar);
             details = `
-                <div><small>Характеристика атаки: ${this.getCharacteristicName(skill.attackChar)}</small></div>
-                <div><small>Сложность: ${skill.difficulty || 0}</small></div>
+                <div><small><i class="fas fa-bullseye skill-field-icon"></i><span class="skill-field-label">Характеристика атаки:</span> ${this.getCharacteristicName(skill.attackChar)} <span class="char-value-display">${attackCharValue}</span></small></div>
+                <div><small><i class="fas fa-star skill-field-icon"></i><span class="skill-field-label">Сложность:</span> ${skill.difficulty || 0}</small></div>
                 ${skill.range ? `
                     <div style="display: flex; align-items: center; gap: 5px;">
-                        <small>Дальность: ${skill.range}</small>
+                        <small><i class="fas fa-arrows-alt skill-field-icon"></i><span class="skill-field-label">Дальность:</span> ${skill.range}</small>
                         <button type="button" class="charm-desc-toggle range-info-btn" title="Таблица дальности" style="background: none; border: none; cursor: pointer; padding: 2px;">
                             <i class="fas fa-info"></i>
                         </button>
@@ -271,7 +273,7 @@ class CombatSkillsManager {
                 ` : ''}
                 ${skill.duration ? `
                     <div style="display: flex; align-items: center; gap: 5px;">
-                        <small>Длительность: ${skill.duration}</small>
+                        <small><i class="fas fa-hourglass-half skill-field-icon"></i><span class="skill-field-label">Длительность:</span> ${skill.duration}</small>
                         <button type="button" class="charm-desc-toggle duration-info-btn" title="Таблица длительности" style="background: none; border: none; cursor: pointer; padding: 2px;">
                             <i class="fas fa-info"></i>
                         </button>
@@ -280,9 +282,9 @@ class CombatSkillsManager {
             `;
         } else if (skill.type === 'ritual') {
             details = `
-                <div><small>Стоимость: ${skill.cost || 'Не указана'}</small></div>
-                ${skill.requirements ? `<div><small>Требования: ${skill.requirements}</small></div>` : ''}
-                ${skill.castTime ? `<div><small>Время каста: ${skill.castTime}</small></div>` : ''}
+                <div><small><i class="fas fa-coins skill-field-icon"></i><span class="skill-field-label">Стоимость:</span> ${skill.cost || 'Не указана'}</small></div>
+                ${skill.requirements ? `<div><small><i class="fas fa-clipboard-check skill-field-icon"></i><span class="skill-field-label">Требования:</span> ${skill.requirements}</small></div>` : ''}
+                ${skill.castTime ? `<div><small><i class="fas fa-clock skill-field-icon"></i><span class="skill-field-label">Время каста:</span> ${skill.castTime}</small></div>` : ''}
             `;
         }
 
@@ -342,6 +344,18 @@ class CombatSkillsManager {
             grace: 'Грация'
         };
         return names[key] || key;
+    }
+
+    // Получить итоговое значение характеристики
+    getCharacteristicValue(key) {
+        const base = characterSheet.state.characteristics.base[key] || 0;
+        const mod = characterSheet.state.characteristics.modifiers[key] || 0;
+        const total = base + mod;
+        // Для скорости возвращаем целое число, для остальных - с плавающей точкой
+        if (key === 'speed') {
+            return total;
+        }
+        return total % 1 === 0 ? total : total.toFixed(1);
     }
     
     setupEventListeners() {
@@ -473,23 +487,27 @@ class CombatSkillsManager {
         const block = document.getElementById('content-combatSkills');
         if (!block) return;
 
-        const item = block.querySelector(`.list-item[data-index="${index}"]`);
-        if (!item) return;
+        // Находим ВСЕ элементы с данным индексом (может быть несколько для активных навыков)
+        const items = block.querySelectorAll(`.list-item[data-index="${index}"]`);
+        if (!items.length) return;
 
-        const wrapper = item.querySelector('.skill-description-wrapper');
-        if (!wrapper) return;
-
-        const button = wrapper.querySelector('.skill-desc-toggle');
-        const description = wrapper.querySelector('.ritual-description');
         const isCollapsed = this.collapsedDescriptions[index];
 
-        // Обновляем иконку и текст кнопки
-        button.querySelector('i').className = `fas fa-chevron-${isCollapsed ? 'down' : 'up'}`;
-        button.querySelector('span').textContent = isCollapsed ? 'Показать описание' : 'Скрыть описание';
-        button.title = isCollapsed ? 'Развернуть описание' : 'Свернуть описание';
+        items.forEach(item => {
+            const wrapper = item.querySelector('.skill-description-wrapper');
+            if (!wrapper) return;
 
-        // Обновляем класс описания
-        description.classList.toggle('collapsed', isCollapsed);
+            const button = wrapper.querySelector('.skill-desc-toggle');
+            const description = wrapper.querySelector('.ritual-description');
+
+            // Обновляем иконку и текст кнопки
+            button.querySelector('i').className = `fas fa-chevron-${isCollapsed ? 'down' : 'up'}`;
+            button.querySelector('span').textContent = isCollapsed ? 'Показать описание' : 'Скрыть описание';
+            button.title = isCollapsed ? 'Развернуть описание' : 'Свернуть описание';
+
+            // Обновляем класс описания
+            description.classList.toggle('collapsed', isCollapsed);
+        });
     }
 
     toggleSkillActive(index, isActive) {
