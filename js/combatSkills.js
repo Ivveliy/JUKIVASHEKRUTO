@@ -420,7 +420,7 @@ class CombatSkillsManager {
                 this.toggleDescription(index);
             }
             // Изменение количества ячеек техники (ручная корректировка)
-            else if (e.target.id === 'technique-slots-input' && e.type === 'input') {
+            else if (e.target.id === 'technique-slots-input' && e.type === 'change') {
                 const newTotal = parseInt(e.target.value) || 0;
                 const insightBonus = this.getTechniqueSlotsTotal();
                 const advancementBonus = characterSheet.state.techniqueSlots || 0;
@@ -434,7 +434,6 @@ class CombatSkillsManager {
 
         block.addEventListener('click', this.clickHandler);
         block.addEventListener('change', this.clickHandler);
-        block.addEventListener('input', this.clickHandler);
 
         // Обработчик для установки ширины после изменения значения
         this.blurHandler = (e) => {

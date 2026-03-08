@@ -282,7 +282,7 @@ class CharmsManager {
                 const listItem = btn.closest('.list-item');
                 const index = parseInt(listItem.dataset.index);
                 this.toggleCharmDescription(index);
-            } else if (e.target.id === 'charm-slots-input' && e.type === 'input') {
+            } else if (e.target.id === 'charm-slots-input' && e.type === 'change') {
                 const newTotal = parseInt(e.target.value) || 3;
                 const baseSlots = 3;
                 const pathRanksBonus = this.getPathRanksBonus();
@@ -294,7 +294,7 @@ class CharmsManager {
         };
 
         block.addEventListener('click', this.clickHandler);
-        block.addEventListener('input', this.clickHandler);
+        block.addEventListener('change', this.clickHandler);
 
         // Обработчик для установки ширины после изменения значения
         this.blurHandler = (e) => {

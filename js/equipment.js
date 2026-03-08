@@ -262,15 +262,15 @@ class EquipmentManager {
             }
         };
 
-        this.changeHandler = (e) => {
-            if (e.target.id === 'geo-input') {
-                characterSheet.state.geo = parseInt(e.target.value) || 0;
-                characterSheet.saveState();
+        // Обработчик для установки ширины после изменения значения
+        this.blurHandler = (e) => {
+            if (e.target.classList.contains('compact-input')) {
                 this.setInputWidth(e.target);
             }
         };
 
-        this.inputHandler = (e) => {
+        // Обработчик для сохранения после потери фокуса (вместо input)
+        this.changeHandlerCompact = (e) => {
             if (e.target.id === 'max-load-input') {
                 const newMaxLoad = parseFloat(e.target.value) || 0;
                 const baseMight = characterSheet.state.characteristics.base.might;
@@ -282,19 +282,29 @@ class EquipmentManager {
                 characterSheet.saveState();
                 this.updateLoadDisplay();
             }
-        };
-
-        // Обработчик для установки ширины после изменения значения
-        this.blurHandler = (e) => {
-            if (e.target.classList.contains('compact-input')) {
+            if (e.target.id === 'geo-input') {
+                characterSheet.state.geo = parseInt(e.target.value) || 0;
+                characterSheet.saveState();
                 this.setInputWidth(e.target);
             }
         };
 
         document.addEventListener('click', this.clickHandler);
-        document.addEventListener('change', this.changeHandler);
-        document.addEventListener('input', this.inputHandler);
+        document.addEventListener('change', this.changeHandlerCompact);
         document.addEventListener('blur', this.blurHandler, true);
+    }
+
+    // Очистка обработчиков
+    cleanupEventListeners() {
+        if (this.clickHandler) {
+            document.removeEventListener('click', this.clickHandler);
+        }
+        if (this.changeHandlerCompact) {
+            document.removeEventListener('change', this.changeHandlerCompact);
+        }
+        if (this.blurHandler) {
+            document.removeEventListener('blur', this.blurHandler, true);
+        }
     }
 
     // Инициализация ширины полей после рендера
