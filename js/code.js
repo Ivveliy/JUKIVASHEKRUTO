@@ -12,6 +12,8 @@ class CharacterSheet {
             paths: [],
             charms: [],
             charmSlots: 0, // Ручная корректировка количества слотов (по умолчанию 0)
+            techniqueSlots: 0, // Ячейки Техник от малых продвижений
+            techniqueSlotsManualAdjustment: 0, // Ручная корректировка ячеек техники
             blockOrder: ['characteristics', 'statuses', 'traits', 'equipment',
                        'nonCombatSkills', 'combatSkills', 'paths', 'charms', 'advancements'],
             collapsedBlocks: {},
@@ -111,7 +113,9 @@ class CharacterSheet {
             paths: JSON.parse(JSON.stringify(this.state.paths)),
             charms: JSON.parse(JSON.stringify(this.state.charms)),
             advancements: JSON.parse(JSON.stringify(this.state.advancements)),
-            combatSkillsCollapsedSections: this.state.combatSkillsCollapsedSections
+            combatSkillsCollapsedSections: this.state.combatSkillsCollapsedSections,
+            techniqueSlots: this.state.techniqueSlots || 0,
+            techniqueSlotsManualAdjustment: this.state.techniqueSlotsManualAdjustment || 0
         };
 
         localStorage.setItem('hk_rpg_character', JSON.stringify(stateToSave));
@@ -142,6 +146,14 @@ class CharacterSheet {
                 // Инициализируем advancements если не существует
                 if (!this.state.advancements) {
                     this.state.advancements = [];
+                }
+
+                // Инициализируем techniqueSlots для обратной совместимости
+                if (this.state.techniqueSlots === undefined) {
+                    this.state.techniqueSlots = 0;
+                }
+                if (this.state.techniqueSlotsManualAdjustment === undefined) {
+                    this.state.techniqueSlotsManualAdjustment = 0;
                 }
 
                 console.log('Состояние загружено');
@@ -520,6 +532,11 @@ class CharacterSheet {
 
         if (window.updateCharmsDisplay) {
             window.updateCharmsDisplay();
+        }
+
+        // Обновляем Ячейки Техник
+        if (window.updateCombatSkillsTechniqueSlots) {
+            window.updateCombatSkillsTechniqueSlots();
         }
     }
     

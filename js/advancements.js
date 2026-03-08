@@ -51,6 +51,11 @@ class AdvancementsManager {
                 color = 'var(--accent-purple)';
                 description = '+1 к Нагрузке';
                 break;
+            case 'technique':
+                icon = 'fa-book-open';
+                color = 'var(--accent-blue)';
+                description = '+1 Ячейка Техники';
+                break;
         }
 
         return `
@@ -94,7 +99,7 @@ class AdvancementsManager {
         // Рассчитываем текущую скорость с учётом только продвижений к скорости
         const baseSpeed = characterSheet.state.characteristics.base.speed;
         let speedAdvancements = 0;
-        
+
         if (characterSheet.state.advancements) {
             characterSheet.state.advancements.forEach(adv => {
                 if (adv.type === 'speed') {
@@ -102,7 +107,7 @@ class AdvancementsManager {
                 }
             });
         }
-        
+
         const totalSpeed = baseSpeed + speedAdvancements;
         const hideSpeedOption = totalSpeed >= 7;
 
@@ -156,6 +161,21 @@ class AdvancementsManager {
                     <strong>Добавить +1 к Нагрузке</strong>
                     <br><small style="color: #666; margin-left: 30px;">Увеличивает максимальную нагрузку жука</small>
                 </button>
+
+                <button class="advancement-type-btn" data-type="technique" style="
+                    padding: 15px;
+                    background-color: var(--light-bg);
+                    border: 2px solid var(--border-color);
+                    border-radius: var(--radius);
+                    cursor: pointer;
+                    font-size: 1rem;
+                    transition: all 0.2s ease;
+                    text-align: left;
+                ">
+                    <i class="fas fa-book-open" style="color: var(--accent-blue); margin-right: 10px;"></i>
+                    <strong>Добавить +1 Ячейка Техники</strong>
+                    <br><small style="color: #666; margin-left: 30px;">Увеличивает количество Ячеек Техники жука</small>
+                </button>
             </div>
         `;
 
@@ -167,13 +187,15 @@ class AdvancementsManager {
             btn.addEventListener('click', () => {
                 const type = btn.dataset.type;
                 modal.remove();
-                
+
                 if (type === 'characteristic') {
                     this.showCharacteristicSelector();
                 } else if (type === 'speed') {
                     this.addSpeedAdvancement();
                 } else if (type === 'load') {
                     this.addLoadAdvancement();
+                } else if (type === 'technique') {
+                    this.addTechniqueAdvancement();
                 }
             });
 
@@ -329,6 +351,35 @@ class AdvancementsManager {
         alert('Добавлено +1 к максимальной Нагрузке!');
     }
 
+    addTechniqueAdvancement() {
+        // Добавляем продвижение в состояние
+        if (!characterSheet.state.advancements) {
+            characterSheet.state.advancements = [];
+        }
+
+        characterSheet.state.advancements.push({
+            type: 'technique',
+            value: 1
+        });
+
+        // Увеличиваем модификатор ячеек техники
+        if (!characterSheet.state.techniqueSlots) {
+            characterSheet.state.techniqueSlots = 0;
+        }
+        characterSheet.state.techniqueSlots += 1;
+
+        characterSheet.saveState();
+        
+        // Обновляем Ячейки Техник
+        if (window.updateCombatSkillsTechniqueSlots) {
+            window.updateCombatSkillsTechniqueSlots();
+        }
+        
+        this.renderBlock();
+
+        alert('Добавлена +1 Ячейка Техники!');
+    }
+
     removeAdvancement(index) {
         const advancements = characterSheet.state.advancements;
         if (!advancements || index < 0 || index >= advancements.length) return;
@@ -343,12 +394,23 @@ class AdvancementsManager {
                 characterSheet.state.characteristics.modifiers.speed -= advancement.value;
             } else if (advancement.type === 'load') {
                 characterSheet.state.characteristics.modifiers.load -= advancement.value;
+            } else if (advancement.type === 'technique') {
+                if (!characterSheet.state.techniqueSlots) {
+                    characterSheet.state.techniqueSlots = 0;
+                }
+                characterSheet.state.techniqueSlots -= 1;
             }
 
             // Удаляем из массива
             characterSheet.state.advancements.splice(index, 1);
 
             characterSheet.saveState();
+            
+            // Обновляем Ячейки Техник
+            if (window.updateCombatSkillsTechniqueSlots) {
+                window.updateCombatSkillsTechniqueSlots();
+            }
+            
             characterSheet.updateAllCharacteristics();
             this.renderBlock();
         }

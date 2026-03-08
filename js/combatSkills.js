@@ -7,6 +7,81 @@ class CombatSkillsManager {
         this.init();
     }
 
+    // Получить итоговое значение Проницательности
+    getInsightTotal() {
+        return characterSheet.state.characteristics.base.insight + 
+               characterSheet.state.characteristics.modifiers.insight;
+    }
+
+    // Рассчитать количество Ячеек Техник (половина Проницательности, округление вниз)
+    getTechniqueSlotsTotal() {
+        const insightTotal = this.getInsightTotal();
+        return Math.floor(insightTotal / 2);
+    }
+
+    // Подсчитать количество активных навыков (боевые искусства и магия)
+    getActiveSkillsCount() {
+        return characterSheet.state.combatSkills
+            .filter(skill => skill.isActive && skill.type !== 'ritual')
+            .length;
+    }
+
+    // Отобразить счетчик Ячеек Техник
+    renderTechniqueSlotsDisplay() {
+        const insightBonus = this.getTechniqueSlotsTotal(); // Половина Проницательности
+        const advancementBonus = characterSheet.state.techniqueSlots || 0; // От малых продвижений
+        const manualAdjustment = characterSheet.state.techniqueSlotsManualAdjustment || 0; // Ручная корректировка
+        const totalSlots = insightBonus + advancementBonus + manualAdjustment;
+        const usedSlots = this.getActiveSkillsCount();
+
+        return `
+            <div class="charm-slots-container" style="margin-bottom: 20px;">
+                <h3 style="display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-book-open"></i>
+                    <span>Ячейки Техник</span>
+                </h3>
+                <div class="characteristic">
+                    <span class="char-name">Использовано ячеек</span>
+                    <div class="char-value">
+                        <span>${usedSlots} / ${totalSlots}</span>
+                    </div>
+                </div>
+                <div class="characteristic">
+                    <span class="char-name">Всего ячеек</span>
+                    <div class="char-value">
+                        <input type="number" id="technique-slots-input" class="form-control" style="width: 80px;"
+                               value="${totalSlots}" min="0">
+                    </div>
+                </div>
+                <div class="charm-sources" style="margin-top: 10px; padding: 10px; background-color: var(--light-bg); border-radius: var(--radius); font-size: 0.9em;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span><i class="fas fa-brain"></i> От Проницательности:</span>
+                        <span>${insightBonus} (половина Проницательности)</span>
+                    </div>
+                    ${advancementBonus > 0 ? `
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span><i class="fas fa-plus-circle"></i> От малых продвижений:</span>
+                            <span>+${advancementBonus}</span>
+                        </div>
+                    ` : ''}
+                    ${manualAdjustment !== 0 ? `
+                        <div style="display: flex; justify-content: space-between;">
+                            <span><i class="fas fa-edit"></i> Корректировка:</span>
+                            <span>${manualAdjustment > 0 ? '+' : ''}${manualAdjustment}</span>
+                        </div>
+                    ` : ''}
+                </div>
+                <div class="charm-slots" style="margin-top: 10px;">
+                    ${Array.from({length: totalSlots}, (_, i) => `
+                        <div class="charm-slot ${i < usedSlots ? 'filled' : ''}" title="${i < usedSlots ? 'Занято' : 'Свободно'}">
+                            ${i < usedSlots ? '<i class="fas fa-book"></i>' : i + 1}
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+
     // Форматирование текста описания: сохранение переносов и абзацев
     formatDescription(text) {
         if (!text || text.trim() === '') return '';
@@ -29,6 +104,8 @@ class CombatSkillsManager {
             <button class="add-btn" id="add-combat-skill-btn" style="margin-bottom: 15px;">
                 <i class="fas fa-plus"></i> Добавить навык
             </button>
+
+            ${this.renderTechniqueSlotsDisplay()}
 
             <div class="combat-skills-filters">
                 <button class="filter-btn ${this.activeFilter === 'all' ? 'active' : ''}" data-filter="all">
@@ -263,9 +340,10 @@ class CombatSkillsManager {
         const block = document.getElementById('content-combatSkills');
         if (!block) return;
 
-        // Remove existing click handler if it exists
+        // Remove existing handlers if they exist
         if (this.clickHandler) {
             block.removeEventListener('click', this.clickHandler);
+            block.removeEventListener('change', this.clickHandler);
         }
 
         this.clickHandler = (e) => {
@@ -325,9 +403,21 @@ class CombatSkillsManager {
                 e.stopPropagation();
                 this.showDurationTable();
             }
+            // Изменение количества ячеек техники (ручная корректировка)
+            else if (e.target.id === 'technique-slots-input' && e.type === 'change') {
+                const newTotal = parseInt(e.target.value) || 0;
+                const insightBonus = this.getTechniqueSlotsTotal();
+                const advancementBonus = characterSheet.state.techniqueSlots || 0;
+                // Рассчитываем ручную корректировку как разницу между желаемым total и суммой бонусов
+                const manualAdjustment = newTotal - insightBonus - advancementBonus;
+                characterSheet.state.techniqueSlotsManualAdjustment = manualAdjustment;
+                characterSheet.saveState();
+                this.updateTechniqueSlotsDisplay();
+            }
         };
 
         block.addEventListener('click', this.clickHandler);
+        block.addEventListener('change', this.clickHandler);
     }
 
     setFilter(filter) {
@@ -350,8 +440,16 @@ class CombatSkillsManager {
         if (skill && skill.type !== 'ritual') {
             skill.isActive = isActive;
             characterSheet.saveState();
+            this.updateTechniqueSlotsDisplay();
             this.renderBlock();
         }
+    }
+
+    // Обновить отображение Ячеек Техник
+    updateTechniqueSlotsDisplay() {
+        // Просто перерисовываем весь блок для корректного обновления
+        // Это гарантирует, что все данные будут актуальны
+        this.renderBlock();
     }
 
     showSkillModal(skillIndex = null) {
@@ -779,3 +877,10 @@ class CombatSkillsManager {
 
 // Инициализация
 window.combatSkillsManager = new CombatSkillsManager();
+
+// Глобальная функция для обновления Ячеек Техник из других модулей
+window.updateCombatSkillsTechniqueSlots = () => {
+    if (window.combatSkillsManager) {
+        window.combatSkillsManager.updateTechniqueSlotsDisplay();
+    }
+};
