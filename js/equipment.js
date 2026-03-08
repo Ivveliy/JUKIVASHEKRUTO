@@ -3,6 +3,7 @@ class EquipmentManager {
     constructor() {
         this.clickHandler = null;
         this.changeHandler = null;
+        this.inputHandler = null;
         this.init();
     }
 
@@ -26,13 +27,16 @@ class EquipmentManager {
         if (!content) return;
 
         content.innerHTML = `
-            <div class="geo-container" style="margin-bottom: 15px; padding: 10px; background-color: var(--light-bg); border-radius: var(--radius);">
-                <h3><i class="fas fa-coins"></i> Гео (аналог)</h3>
-                <div class="characteristic">
-                    <span class="char-name">Местная валюта</span>
-                    <div class="char-value">
-                        <input type="number" step="1" id="geo-input" class="form-control" style="width: 100px;"
+            <div class="equipment-header" style="margin-bottom: 15px; padding: 10px; background-color: var(--light-bg); border-radius: var(--radius);">
+                <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+                    <div class="geo-display">
+                        <strong><i class="fas fa-coins"></i> Гео:</strong>
+                        <input type="number" step="1" id="geo-input" class="form-control" style="width: 80px; display: inline-block;"
                                value="${characterSheet.state.geo || 0}" min="0">
+                    </div>
+                    <div class="load-display">
+                        <strong><i class="fas fa-weight-hanging"></i> Нагрузка:</strong>
+                        ${this.renderCompactLoadDisplay()}
                     </div>
                 </div>
             </div>
@@ -41,21 +45,14 @@ class EquipmentManager {
                 <i class="fas fa-plus"></i> Добавить снаряжение
             </button>
 
-            <div class="load-container">
-                <h3><i class="fas fa-weight-hanging"></i> Нагрузка</h3>
-                ${this.renderLoadDisplay()}
-            </div>
-
             <div class="equipment-categories">
                 ${this.renderEquipmentCategories()}
             </div>
         `;
     }
-    
-    renderLoadDisplay() {
-        const load = characterSheet.calculateLoad();
-        const percentage = load.max > 0 ? (load.current / load.max) * 100 : 0;
 
+    renderCompactLoadDisplay() {
+        const load = characterSheet.calculateLoad();
         const baseMight = characterSheet.state.characteristics.base.might;
         const mightMod = characterSheet.state.characteristics.modifiers.might || 0;
         const totalMight = baseMight + mightMod;
@@ -64,49 +61,10 @@ class EquipmentManager {
         const maxLoad = totalMight + loadModifier + loadAdjustment;
 
         return `
-            <div class="characteristic">
-                <span class="char-name">Текущая нагрузка</span>
-                <div class="char-value">
-                    <span>${load.current} / ${maxLoad}</span>
-                </div>
-            </div>
-
-            <div class="characteristic">
-                <span class="char-name">Максимальная нагрузка</span>
-                <div class="char-value">
-                    <input type="number" step="0.5" id="max-load-input" class="form-control" style="width: 80px;"
-                           value="${maxLoad}" min="0">
-                </div>
-            </div>
-
-            <div class="load-bar">
-                <div class="load-fill" id="load-fill" style="width: ${percentage}%"></div>
-                <div class="load-text">${load.current}/${maxLoad}</div>
-            </div>
-
-            <div class="load-sources" style="margin-top: 10px; padding: 10px; background-color: var(--light-bg); border-radius: var(--radius); font-size: 0.9em;">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                    <span><i class="fas fa-chart-bar"></i> Мощь (итог):</span>
-                    <span>${totalMight}</span>
-                </div>
-                ${loadModifier !== 0 ? `
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                        <span><i class="fas fa-plus-circle"></i> Черты/амулеты/статусы:</span>
-                        <span style="color: ${loadModifier > 0 ? 'var(--accent-green)' : 'var(--accent-red)'};">${loadModifier > 0 ? '+' : ''}${loadModifier}</span>
-                    </div>
-                ` : ''}
-                ${loadAdjustment !== 0 ? `
-                    <div style="display: flex; justify-content: space-between;">
-                        <span><i class="fas fa-edit"></i> Корректировка:</span>
-                        <span style="color: var(--accent-blue);">${loadAdjustment > 0 ? '+' : ''}${loadAdjustment}</span>
-                    </div>
-                ` : ''}
-            </div>
-
-            <div style="margin-top: 10px; font-size: 0.9em;">
-                <small>Осталось места: ${load.remaining}</small><br>
-                <small>Вес снаряжения: ${load.current}</small>
-            </div>
+            <span>${load.current} / ${maxLoad}</span>
+            <input type="number" step="0.5" id="max-load-input" class="form-control" style="width: 60px; margin-left: 8px; display: inline-block;"
+                   value="${maxLoad}" min="0" title="Максимальная нагрузка">
+            <small style="color: #666; margin-left: 8px;">(Мощь: ${totalMight}${loadModifier !== 0 ? (loadModifier > 0 ? ' + ' + loadModifier : ' - ' + Math.abs(loadModifier)) : ''}${loadAdjustment !== 0 ? (loadAdjustment > 0 ? ' + ' + loadAdjustment : ' - ' + Math.abs(loadAdjustment)) : ''})</small>
         `;
     }
     
@@ -148,59 +106,58 @@ class EquipmentManager {
     }
     
     renderEquipmentItem(item, index) {
-        let mainDetails = '';
+        let compactDetails = '';
         let modifications = '';
         let hasModifications = false;
 
         if (item.category === 'weapons') {
-            mainDetails = `
-                <div><small>Тип: ${item.weaponType || 'Не указан'}</small></div>
-                <div><small>Урон: ${item.damage || '0'} (${item.damageType || 'не указан'})</small></div>
-                ${item.range ? `<div><small>Дальность: ${item.range}</small></div>` : ''}
-                <div><small>Качество: ${item.quality || '1'}</small></div>
-                <div><small>Стоимость: ${item.cost || 0}</small></div>
-            `;
+            // Компактное отображение: Тип | Урон | Дальность | Качество
+            let detailsParts = [
+                `${item.weaponType || 'Не указан'}`,
+                `${item.damage || '0'} (${item.damageType || 'не указан'})`
+            ];
+            if (item.range) detailsParts.push(`${item.range}`);
+            detailsParts.push(`Качество: ${item.quality || '1'}`);
+            detailsParts.push(`${item.cost || 0} гео`);
+            
+            compactDetails = `<div class="item-compact-details"><small>${detailsParts.join(' • ')}</small></div>`;
+            
             if (item.modifications) {
                 hasModifications = true;
                 modifications = `<div><small>Модификации: ${item.modifications}</small></div>`;
             }
         } else if (item.category === 'armor') {
-            mainDetails = `
-                <div><small>ПУ: ${item.absorption || '0'}</small></div>
-                <div><small>Качество: ${item.quality || '1'}</small></div>
-                ${item.durability !== undefined ? `
-                <div class="durability-control">
-                    <small>Прочность: </small>
-                    <div style="display: inline-flex; align-items: center; gap: 4px;">
-                        <button type="button" class="char-btn char-minus durability-dec" data-index="${index}" title="Уменьшить на 1" style="width: 24px; height: 24px; min-width: 24px; padding: 0;">
-                            <i class="fas fa-minus"></i>
-                        </button>
-                        <span class="durability-value">${item.durability}</span>
-                        <button type="button" class="char-btn char-plus durability-inc" data-index="${index}" title="Увеличить на 1" style="width: 24px; height: 24px; min-width: 24px; padding: 0;">
-                            <i class="fas fa-plus"></i>
-                        </button>
-                    </div>
-                </div>
-                ` : ''}
-                <div><small>Стоимость: ${item.cost || 0}</small></div>
-            `;
+            // Компактное отображение: ПУ | Качество | Прочность | Стоимость
+            let detailsParts = [
+                `ПУ: ${item.absorption || '0'}`,
+                `Качество: ${item.quality || '1'}`
+            ];
+            if (item.durability !== undefined) {
+                detailsParts.push(`Прочность: ${item.durability}`);
+            }
+            detailsParts.push(`${item.cost || 0} гео`);
+            
+            compactDetails = `<div class="item-compact-details"><small>${detailsParts.join(' • ')}</small></div>`;
+            
             if (item.modifications) {
                 hasModifications = true;
                 modifications = `<div><small>Модификации: ${item.modifications}</small></div>`;
             }
         } else {
-            mainDetails = `<div class="item-description">${this.formatDescription(item.description || 'Описание отсутствует')}</div>`;
-            mainDetails += `<div><small>Стоимость: ${item.cost || 0}</small></div>`;
+            // Для прочего - только описание если есть
+            compactDetails = item.description ? 
+                `<div class="item-compact-details"><small>${item.description.substring(0, 100)}${item.description.length > 100 ? '...' : ''}</small></div>` : 
+                `<div class="item-compact-details"><small>Стоимость: ${item.cost || 0} гео</small></div>`;
         }
 
         return `
             <div class="list-item" data-index="${index}">
                 <div>
-                    <strong>${item.name}</strong>
-                    <div class="item-weight">
-                        <small>Вес: ${item.weight || 0}</small>
+                    <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
+                        <strong>${item.name}</strong>
+                        <span class="item-weight-badge"><small>${item.weight || 0}</small></span>
                     </div>
-                    ${mainDetails}
+                    ${compactDetails}
                     ${hasModifications ? `
                     <div class="item-modifications hidden" style="max-height: 0; overflow: hidden; transition: max-height 0.3s ease;">
                         ${modifications}
@@ -231,6 +188,9 @@ class EquipmentManager {
         }
         if (this.changeHandler) {
             document.removeEventListener('change', this.changeHandler);
+        }
+        if (this.inputHandler) {
+            document.removeEventListener('input', this.inputHandler);
         }
 
         // Создаём новые обработчики
@@ -286,6 +246,13 @@ class EquipmentManager {
         };
 
         this.changeHandler = (e) => {
+            if (e.target.id === 'geo-input') {
+                characterSheet.state.geo = parseInt(e.target.value) || 0;
+                characterSheet.saveState();
+            }
+        };
+
+        this.inputHandler = (e) => {
             if (e.target.id === 'max-load-input') {
                 const newMaxLoad = parseFloat(e.target.value) || 0;
                 const baseMight = characterSheet.state.characteristics.base.might;
@@ -296,14 +263,12 @@ class EquipmentManager {
                 characterSheet.state.loadAdjustment = newMaxLoad - totalMight - loadModifier;
                 characterSheet.saveState();
                 this.updateLoadDisplay();
-            } else if (e.target.id === 'geo-input') {
-                characterSheet.state.geo = parseInt(e.target.value) || 0;
-                characterSheet.saveState();
             }
         };
 
         document.addEventListener('click', this.clickHandler);
         document.addEventListener('change', this.changeHandler);
+        document.addEventListener('input', this.inputHandler);
     }
 
     showEquipmentModal(equipmentIndex = null) {
@@ -500,38 +465,13 @@ class EquipmentManager {
     }
     
     updateLoadDisplay() {
-        const loadContainer = document.querySelector('.load-container');
-        if (loadContainer) {
-            const loadDisplay = this.renderLoadDisplay();
-            loadContainer.innerHTML = `<h3><i class="fas fa-weight-hanging"></i> Нагрузка</h3>${loadDisplay}`;
-
-            // Обновляем цвет индикатора нагрузки
-            const load = characterSheet.calculateLoad();
-            const percentage = load.max > 0 ? (load.current / load.max) * 100 : 0;
-            const loadFill = document.getElementById('load-fill');
-            if (loadFill) {
-                loadFill.style.width = `${percentage}%`;
-                if (percentage > 100) {
-                    loadFill.style.backgroundColor = 'var(--accent-red)';
-                } else if (percentage > 80) {
-                    loadFill.style.backgroundColor = 'var(--accent-yellow)';
-                } else {
-                    loadFill.style.backgroundColor = 'var(--accent-blue)';
-                }
+        const equipmentHeader = document.querySelector('.equipment-header');
+        if (equipmentHeader) {
+            const loadDisplay = this.renderCompactLoadDisplay();
+            const loadDisplayElement = equipmentHeader.querySelector('.load-display');
+            if (loadDisplayElement) {
+                loadDisplayElement.innerHTML = `<strong><i class="fas fa-weight-hanging"></i> Нагрузка:</strong>${loadDisplay}`;
             }
-
-            // Обновляем обработчик изменения максимальной нагрузки
-            document.getElementById('max-load-input')?.addEventListener('change', (e) => {
-                const newMaxLoad = parseFloat(e.target.value) || 0;
-                const baseMight = characterSheet.state.characteristics.base.might;
-                const mightMod = characterSheet.state.characteristics.modifiers.might || 0;
-                const totalMight = baseMight + mightMod;
-                const loadModifier = characterSheet.state.characteristics.modifiers.load || 0;
-                // Сохраняем только ручную корректировку
-                characterSheet.state.loadAdjustment = newMaxLoad - totalMight - loadModifier;
-                characterSheet.saveState();
-                this.updateLoadDisplay();
-            });
         }
     }
     

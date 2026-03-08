@@ -4,6 +4,7 @@ class CombatSkillsManager {
         this.activeFilter = 'all'; // 'all', 'combat', 'magic', 'ritual'
         this.clickHandler = null;
         this.collapsedSections = {}; // Состояние сворачивания разделов
+        this.collapsedDescriptions = {}; // Состояние сворачивания описаний навыков
         this.init();
     }
 
@@ -250,6 +251,11 @@ class CombatSkillsManager {
         // Находим реальный индекс в массиве
         const index = characterSheet.state.combatSkills.findIndex(s => s === skill);
 
+        // Инициализируем состояние сворачивания описания для нового навыка
+        if (this.collapsedDescriptions[index] === undefined && skill.description) {
+            this.collapsedDescriptions[index] = true; // По умолчанию описание скрыто
+        }
+
         let details = '';
 
         if (skill.type === 'combat') {
@@ -304,7 +310,17 @@ class CombatSkillsManager {
                         <small>${this.getSkillTypeName(skill.type)}</small>
                     </div>
                     ${details}
-                    ${skill.description ? `<div class="ritual-description" style="margin-top: 8px; background: var(--light-bg); padding: 8px; border-radius: 4px;">${this.formatDescription(skill.description)}</div>` : ''}
+                    ${skill.description ? `
+                        <div class="skill-description-wrapper" style="margin-top: 8px;">
+                            <button type="button" class="skill-desc-toggle" data-index="${index}" title="${this.collapsedDescriptions[index] ? 'Развернуть описание' : 'Свернуть описание'}">
+                                <i class="fas fa-chevron-${this.collapsedDescriptions[index] ? 'down' : 'up'}"></i>
+                                <span>${this.collapsedDescriptions[index] ? 'Показать описание' : 'Скрыть описание'}</span>
+                            </button>
+                            <div class="ritual-description ${this.collapsedDescriptions[index] ? 'collapsed' : ''}" style="background: var(--light-bg); padding: 8px; border-radius: 4px;">
+                                ${this.formatDescription(skill.description)}
+                            </div>
+                        </div>
+                    ` : ''}
                 </div>
                 <div class="list-item-controls">
                     <button class="edit-combat-skill" title="Редактировать">
@@ -403,6 +419,14 @@ class CombatSkillsManager {
                 e.stopPropagation();
                 this.showDurationTable();
             }
+            // Сворачивание/разворачивание описания навыка
+            else if (e.target.closest('.skill-desc-toggle')) {
+                e.preventDefault();
+                e.stopPropagation();
+                const button = e.target.closest('.skill-desc-toggle');
+                const index = parseInt(button.dataset.index);
+                this.toggleDescription(index);
+            }
             // Изменение количества ячеек техники (ручная корректировка)
             else if (e.target.id === 'technique-slots-input' && e.type === 'change') {
                 const newTotal = parseInt(e.target.value) || 0;
@@ -432,6 +456,37 @@ class CombatSkillsManager {
         this.collapsedSections[section] = !this.collapsedSections[section];
         characterSheet.saveState();
         this.renderBlock();
+    }
+
+    toggleDescription(index) {
+        if (this.collapsedDescriptions[index] === undefined) {
+            this.collapsedDescriptions[index] = false;
+        }
+        this.collapsedDescriptions[index] = !this.collapsedDescriptions[index];
+        this.updateDescriptionDisplay(index);
+    }
+
+    updateDescriptionDisplay(index) {
+        const block = document.getElementById('content-combatSkills');
+        if (!block) return;
+
+        const item = block.querySelector(`.list-item[data-index="${index}"]`);
+        if (!item) return;
+
+        const wrapper = item.querySelector('.skill-description-wrapper');
+        if (!wrapper) return;
+
+        const button = wrapper.querySelector('.skill-desc-toggle');
+        const description = wrapper.querySelector('.ritual-description');
+        const isCollapsed = this.collapsedDescriptions[index];
+
+        // Обновляем иконку и текст кнопки
+        button.querySelector('i').className = `fas fa-chevron-${isCollapsed ? 'down' : 'up'}`;
+        button.querySelector('span').textContent = isCollapsed ? 'Показать описание' : 'Скрыть описание';
+        button.title = isCollapsed ? 'Развернуть описание' : 'Свернуть описание';
+
+        // Обновляем класс описания
+        description.classList.toggle('collapsed', isCollapsed);
     }
 
     toggleSkillActive(index, isActive) {

@@ -430,6 +430,41 @@ body {
     margin-left: 10px;
 }
 
+/* Компактное отображение снаряжения */
+.equipment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.geo-display, .load-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.geo-display strong, .load-display strong {
+    color: var(--primary-color);
+}
+
+.item-weight-badge {
+    background-color: rgba(0, 0, 0, 0.05);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    color: var(--primary-color);
+}
+
+.item-compact-details {
+    margin-top: 6px;
+    color: #666;
+    line-height: 1.5;
+}
+
+.item-compact-details small {
+    color: inherit;
+}
+
 /* Сворачиваемые разделы боевых навыков */
 .skill-section {
     margin-bottom: 15px;
@@ -912,6 +947,17 @@ body {
     box-sizing: border-box;
     background-color: transparent !important;
     padding: 4px 0 !important;
+    max-height: 1000px;
+    overflow: hidden;
+    transition: max-height 0.3s ease, padding 0.3s ease, margin 0.3s ease, opacity 0.3s ease;
+    opacity: 1;
+}
+
+.ritual-description.collapsed {
+    max-height: 0;
+    padding: 0 !important;
+    opacity: 0;
+    overflow: hidden;
 }
 
 .ritual-description p {
@@ -925,6 +971,33 @@ body {
 
 .ritual-description p:last-child {
     margin-bottom: 0;
+}
+
+/* Кнопка сворачивания/разворачивания описания навыка */
+.skill-desc-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    color: var(--accent-blue);
+    cursor: pointer;
+    padding: 4px 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    border-radius: 4px;
+    margin-bottom: 4px;
+}
+
+.skill-desc-toggle:hover {
+    background-color: rgba(52, 152, 219, 0.1);
+    color: var(--primary-color);
+}
+
+.skill-desc-toggle i {
+    font-size: 0.75rem;
+    transition: transform 0.3s ease;
 }
 
 /* Описание предмета снаряжения */
