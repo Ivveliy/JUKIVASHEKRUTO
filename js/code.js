@@ -81,11 +81,14 @@ class CharacterSheet {
     }
     
     init() {
-        this.loadState();
+        // Загружаем активный профиль и инициализируем состояние
+        this.loadStateFromProfile();
         this.setupEventListeners();
+        this.setupProfileEventListeners();
         this.renderBlocks();
         this.updateAllCharacteristics();
-        
+        this.updateProfileButtonsDisplay();
+
         // Применяем позицию панели только на ПК
         if (window.innerWidth > 768) {
             this.applyActionsPanelPosition();
@@ -93,6 +96,38 @@ class CharacterSheet {
             // На мобильных восстанавливаем состояние сворачивания
             this.restoreActionsPanelState();
         }
+    }
+
+    loadStateFromProfile() {
+        // Загружаем состояние из активного профиля
+        const profileId = this.getActiveProfile();
+        const loaded = this.loadProfile(profileId);
+        
+        if (!loaded) {
+            // Проверяем наличие старых данных для миграции
+            const oldSaved = localStorage.getItem('hk_rpg_character');
+            if (oldSaved && profileId === '1') {
+                // Мигрируем старые данные в первый профиль
+                try {
+                    const oldState = JSON.parse(oldSaved);
+                    this.state = { ...this.state, ...oldState };
+                    this.ensureModifiersIntegrity();
+                    this.saveCurrentProfile();
+                    console.log('Старые данные мигрированы в профиль 1');
+                } catch (e) {
+                    console.error('Ошибка миграции старых данных:', e);
+                }
+            } else {
+                // Если профиль пустой, сохраняем текущее состояние по умолчанию
+                this.saveCurrentProfile();
+            }
+        }
+        
+        // Обновляем отображение имени персонажа после загрузки
+        this.updateCharacterNameDisplay();
+        
+        // Восстанавливаем состояние сворачивания разделов боевых навыков
+        this.restoreCombatSkillsCollapsedState();
     }
     
     saveState() {
@@ -118,57 +153,12 @@ class CharacterSheet {
             techniqueSlotsManualAdjustment: this.state.techniqueSlotsManualAdjustment || 0
         };
 
-        localStorage.setItem('hk_rpg_character', JSON.stringify(stateToSave));
-        console.log('Состояние сохранено');
+        // Сохраняем в активный профиль
+        const profileId = this.getActiveProfile();
+        const storageKey = this.getProfileStorageKey(profileId);
+        localStorage.setItem(storageKey, JSON.stringify(stateToSave));
+        console.log(`Состояние сохранено в профиль ${profileId}`);
     }
-    
-    loadState() {
-        const saved = localStorage.getItem('hk_rpg_character');
-        if (saved) {
-            try {
-                const loadedState = JSON.parse(saved);
-
-                // Загружаем каждую часть состояния
-                Object.keys(loadedState).forEach(key => {
-                    if (this.state.hasOwnProperty(key)) {
-                        this.state[key] = loadedState[key];
-                    }
-                });
-
-                // Обеспечиваем целостность модификаторов (для обратной совместимости)
-                this.ensureModifiersIntegrity();
-
-                // Добавляем advancements в blockOrder если его там нет
-                if (!this.state.blockOrder.includes('advancements')) {
-                    this.state.blockOrder.push('advancements');
-                }
-
-                // Инициализируем advancements если не существует
-                if (!this.state.advancements) {
-                    this.state.advancements = [];
-                }
-
-                // Инициализируем techniqueSlots для обратной совместимости
-                if (this.state.techniqueSlots === undefined) {
-                    this.state.techniqueSlots = 0;
-                }
-                if (this.state.techniqueSlotsManualAdjustment === undefined) {
-                    this.state.techniqueSlotsManualAdjustment = 0;
-                }
-
-                console.log('Состояние загружено');
-            } catch (e) {
-                console.error('Ошибка загрузки состояния:', e);
-            }
-        }
-
-        // Обновляем отображение имени персонажа после загрузки
-        this.updateCharacterNameDisplay();
-
-        // Восстанавливаем состояние сворачивания разделов боевых навыков
-        this.restoreCombatSkillsCollapsedState();
-    }
-
     
     exportToJSON() {
         const dataStr = JSON.stringify(this.state, null, 2);
@@ -942,6 +932,310 @@ class CharacterSheet {
         if (window.combatSkillsManager && this.state.combatSkillsCollapsedSections) {
             window.combatSkillsManager.collapsedSections = { ...this.state.combatSkillsCollapsedSections };
         }
+    }
+
+    // === Методы управления профилями персонажей ===
+
+    getActiveProfile() {
+        const saved = localStorage.getItem('hk_rpg_active_profile');
+        return saved || '1'; // По умолчанию профиль 1
+    }
+
+    setActiveProfile(profileId) {
+        localStorage.setItem('hk_rpg_active_profile', profileId);
+    }
+
+    getProfileStorageKey(profileId) {
+        return `hk_rpg_character_profile_${profileId}`;
+    }
+
+    saveCurrentProfile() {
+        const profileId = this.getActiveProfile();
+        const storageKey = this.getProfileStorageKey(profileId);
+        
+        // Сохраняем текущее состояние в профиль
+        const stateToSave = {
+            ...this.state,
+            characteristics: JSON.parse(JSON.stringify(this.state.characteristics)),
+            statuses: JSON.parse(JSON.stringify(this.state.statuses)),
+            traits: JSON.parse(JSON.stringify(this.state.traits)),
+            equipment: JSON.parse(JSON.stringify(this.state.equipment)),
+            nonCombatSkills: JSON.parse(JSON.stringify(this.state.nonCombatSkills)),
+            combatSkills: JSON.parse(JSON.stringify(this.state.combatSkills)),
+            paths: JSON.parse(JSON.stringify(this.state.paths)),
+            charms: JSON.parse(JSON.stringify(this.state.charms)),
+            advancements: JSON.parse(JSON.stringify(this.state.advancements))
+        };
+        
+        localStorage.setItem(storageKey, JSON.stringify(stateToSave));
+    }
+
+    loadProfile(profileId) {
+        const storageKey = this.getProfileStorageKey(profileId);
+        const saved = localStorage.getItem(storageKey);
+        
+        if (saved) {
+            try {
+                const loadedState = JSON.parse(saved);
+                
+                // Загружаем каждую часть состояния
+                Object.keys(loadedState).forEach(key => {
+                    if (this.state.hasOwnProperty(key)) {
+                        this.state[key] = loadedState[key];
+                    }
+                });
+                
+                // Обеспечиваем целостность модификаторов
+                this.ensureModifiersIntegrity();
+                
+                // Добавляем advancements в blockOrder если его там нет
+                if (!this.state.blockOrder.includes('advancements')) {
+                    this.state.blockOrder.push('advancements');
+                }
+                
+                // Инициализируем techniqueSlots для обратной совместимости
+                if (this.state.techniqueSlots === undefined) {
+                    this.state.techniqueSlots = 0;
+                }
+                if (this.state.techniqueSlotsManualAdjustment === undefined) {
+                    this.state.techniqueSlotsManualAdjustment = 0;
+                }
+                
+                return true;
+            } catch (e) {
+                console.error('Ошибка загрузки профиля:', e);
+                return false;
+            }
+        }
+        
+        // Если профиль пустой, возвращаем false
+        return false;
+    }
+
+    switchProfile(profileId) {
+        const currentProfileId = this.getActiveProfile();
+        
+        // Сохраняем текущий профиль перед переключением
+        this.saveCurrentProfile();
+        
+        // Переключаемся на новый профиль
+        this.setActiveProfile(profileId);
+        
+        // Загружаем новый профиль
+        const loaded = this.loadProfile(profileId);
+        
+        // Если профиль не загружен (пустой), инициализируем новое состояние
+        if (!loaded) {
+            this.state = {
+                characterName: '',
+                characteristics: this.getDefaultCharacteristics(),
+                statuses: [],
+                traits: [],
+                equipment: [],
+                nonCombatSkills: [],
+                combatSkills: [],
+                paths: [],
+                charms: [],
+                charmSlots: 0,
+                techniqueSlots: 0,
+                techniqueSlotsManualAdjustment: 0,
+                blockOrder: ['characteristics', 'statuses', 'traits', 'equipment',
+                           'nonCombatSkills', 'combatSkills', 'paths', 'charms', 'advancements'],
+                collapsedBlocks: {},
+                actionsPanelCollapsed: false,
+                actionsPanelPosition: { x: null, y: null },
+                loadAdjustment: 0,
+                combatSkillsCollapsedSections: {},
+                geo: 0,
+                advancements: []
+            };
+        }
+        
+        // Обновляем отображение
+        this.renderBlocks();
+        this.updateAllCharacteristics();
+        this.updateCharacterNameDisplay();
+        
+        // Перерисовываем содержимое всех блоков и переназначаем обработчики
+        if (window.characteristicsManager) {
+            window.characteristicsManager.renderBlock();
+            window.characteristicsManager.setupEventListeners();
+        }
+        if (window.statusesManager) {
+            window.statusesManager.renderBlock();
+            window.statusesManager.setupEventListeners();
+        }
+        if (window.traitsManager) {
+            window.traitsManager.renderBlock();
+            window.traitsManager.refreshEventListeners();
+        }
+        if (window.equipmentManager) {
+            window.equipmentManager.renderBlock();
+            window.equipmentManager.setupEventListeners();
+        }
+        if (window.nonCombatSkillsManager) {
+            window.nonCombatSkillsManager.renderBlock();
+            window.nonCombatSkillsManager.setupEventListeners();
+        }
+        if (window.combatSkillsManager) {
+            window.combatSkillsManager.renderBlock();
+            window.combatSkillsManager.setupEventListeners();
+        }
+        if (window.pathsManager) {
+            window.pathsManager.renderBlock();
+            window.pathsManager.setupEventListeners();
+        }
+        if (window.charmsManager) {
+            window.charmsManager.renderBlock();
+            window.charmsManager.setupEventListeners();
+        }
+        if (window.advancementsManager) {
+            window.advancementsManager.renderBlock();
+            window.advancementsManager.setupEventListeners();
+        }
+        
+        // Сохраняем состояние после переключения
+        this.saveState();
+        
+        // Обновляем визуальное состояние кнопок профилей
+        this.updateProfileButtonsDisplay();
+        
+        // Восстанавливаем состояние панели действий
+        if (window.innerWidth > 768) {
+            this.applyActionsPanelPosition();
+        } else {
+            this.restoreActionsPanelState();
+        }
+        
+        // Обновляем обработчики кнопок действий
+        if (window.setupActionButtons) {
+            window.setupActionButtons();
+        }
+    }
+
+    hasProfileData(profileId) {
+        const storageKey = this.getProfileStorageKey(profileId);
+        return localStorage.getItem(storageKey) !== null;
+    }
+
+    updateProfileButtonsDisplay() {
+        const activeProfile = this.getActiveProfile();
+        
+        // Обновляем активное состояние кнопок
+        document.querySelectorAll('.profile-btn').forEach(btn => {
+            const profileId = btn.dataset.profile;
+            if (profileId === activeProfile) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+            
+            // Показываем индикатор наличия данных
+            if (this.hasProfileData(profileId)) {
+                btn.classList.add('has-data');
+            } else {
+                btn.classList.remove('has-data');
+            }
+        });
+    }
+
+    resetCurrentProfile() {
+        const profileId = this.getActiveProfile();
+        const characterName = this.state.characterName || `Профиль ${profileId}`;
+        
+        if (confirm(`Вы уверены, что хотите очистить профиль "${characterName}"? Все данные будут потеряны.`)) {
+            const storageKey = this.getProfileStorageKey(profileId);
+            localStorage.removeItem(storageKey);
+            
+            // Сбрасываем состояние к значениям по умолчанию
+            this.state = {
+                characterName: '',
+                characteristics: this.getDefaultCharacteristics(),
+                statuses: [],
+                traits: [],
+                equipment: [],
+                nonCombatSkills: [],
+                combatSkills: [],
+                paths: [],
+                charms: [],
+                charmSlots: 0,
+                techniqueSlots: 0,
+                techniqueSlotsManualAdjustment: 0,
+                blockOrder: ['characteristics', 'statuses', 'traits', 'equipment',
+                           'nonCombatSkills', 'combatSkills', 'paths', 'charms', 'advancements'],
+                collapsedBlocks: {},
+                actionsPanelCollapsed: false,
+                actionsPanelPosition: { x: null, y: null },
+                loadAdjustment: 0,
+                combatSkillsCollapsedSections: {},
+                geo: 0,
+                advancements: []
+            };
+            
+            // Обновляем отображение
+            this.renderBlocks();
+            this.updateAllCharacteristics();
+            this.updateCharacterNameDisplay();
+            this.saveState();
+            this.updateProfileButtonsDisplay();
+            
+            // Перерисовываем содержимое всех блоков
+            if (window.characteristicsManager) {
+                window.characteristicsManager.renderBlock();
+                window.characteristicsManager.setupEventListeners();
+            }
+            if (window.statusesManager) {
+                window.statusesManager.renderBlock();
+                window.statusesManager.setupEventListeners();
+            }
+            if (window.traitsManager) {
+                window.traitsManager.renderBlock();
+                window.traitsManager.refreshEventListeners();
+            }
+            if (window.equipmentManager) {
+                window.equipmentManager.renderBlock();
+                window.equipmentManager.setupEventListeners();
+            }
+            if (window.nonCombatSkillsManager) {
+                window.nonCombatSkillsManager.renderBlock();
+                window.nonCombatSkillsManager.setupEventListeners();
+            }
+            if (window.combatSkillsManager) {
+                window.combatSkillsManager.renderBlock();
+                window.combatSkillsManager.setupEventListeners();
+            }
+            if (window.pathsManager) {
+                window.pathsManager.renderBlock();
+                window.pathsManager.setupEventListeners();
+            }
+            if (window.charmsManager) {
+                window.charmsManager.renderBlock();
+                window.charmsManager.setupEventListeners();
+            }
+            if (window.advancementsManager) {
+                window.advancementsManager.renderBlock();
+                window.advancementsManager.setupEventListeners();
+            }
+            
+            if (window.setupActionButtons) {
+                window.setupActionButtons();
+            }
+        }
+    }
+
+    setupProfileEventListeners() {
+        // Обработчики для кнопок профилей
+        document.querySelectorAll('.profile-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const profileId = e.currentTarget.dataset.profile;
+                this.switchProfile(profileId);
+            });
+        });
+        
+        // Обработчик для кнопки сброса профиля
+        document.getElementById('resetProfileBtn')?.addEventListener('click', () => {
+            this.resetCurrentProfile();
+        });
     }
 }
 
