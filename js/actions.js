@@ -1,7 +1,11 @@
 // actions.js - Действия персонажа
+
+// Глобальные обработчики для удаления
+let actionButtonHandlers = null;
+
 document.addEventListener('DOMContentLoaded', () => {
     setupActionButtons();
-    
+
     // Переключение панели действий
     const toggleBtn = document.querySelector('.toggle-panel');
     const actionsHeader = document.getElementById('actionsHeader');
@@ -27,21 +31,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Функция для установки обработчиков кнопок действий
 function setupActionButtons() {
-    document.getElementById('restBtn')?.addEventListener('click', () => {
-        characterSheet.handleRest();
-    });
+    // Удаляем старые обработчики если они есть
+    if (actionButtonHandlers) {
+        document.getElementById('restBtn')?.removeEventListener('click', actionButtonHandlers.rest);
+        document.getElementById('endRoundBtn')?.removeEventListener('click', actionButtonHandlers.endRound);
+        document.getElementById('saveBtn')?.removeEventListener('click', actionButtonHandlers.save);
+        document.getElementById('resetBtn')?.removeEventListener('click', actionButtonHandlers.reset);
+    }
 
-    document.getElementById('endRoundBtn')?.addEventListener('click', () => {
-        characterSheet.handleEndRound();
-    });
+    // Создаём новые обработчики
+    actionButtonHandlers = {
+        rest: () => characterSheet.handleRest(),
+        endRound: () => characterSheet.handleEndRound(),
+        save: () => characterSheet.handleSave(),
+        reset: () => characterSheet.handleReset()
+    };
 
-    document.getElementById('saveBtn')?.addEventListener('click', () => {
-        characterSheet.handleSave();
-    });
-
-    document.getElementById('resetBtn')?.addEventListener('click', () => {
-        characterSheet.handleReset();
-    });
+    // Добавляем новые обработчики
+    document.getElementById('restBtn')?.addEventListener('click', actionButtonHandlers.rest);
+    document.getElementById('endRoundBtn')?.addEventListener('click', actionButtonHandlers.endRound);
+    document.getElementById('saveBtn')?.addEventListener('click', actionButtonHandlers.save);
+    document.getElementById('resetBtn')?.addEventListener('click', actionButtonHandlers.reset);
 }
 
 // Делаем функцию доступной для вызова после импорта

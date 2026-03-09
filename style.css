@@ -115,11 +115,17 @@ body {
 /* Стили для переключателя профилей */
 .profile-selector {
     display: flex;
+    flex-direction: column;
     gap: 5px;
-    align-items: center;
+    align-items: flex-start;
     padding-right: 10px;
     border-right: 1px solid rgba(255, 255, 255, 0.3);
     margin-right: 10px;
+}
+
+.profile-row {
+    display: flex;
+    gap: 5px;
 }
 
 .profile-btn {

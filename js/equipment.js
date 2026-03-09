@@ -160,7 +160,7 @@ class EquipmentManager {
         }
 
         // Получаем класс качества
-        const qualityClass = this.getQualityClass(item.quality || 1);
+        const qualityClass = this.getQualityClass(item.quality !== undefined ? item.quality : 1);
 
         if (item.category === 'weapons') {
             // Компактное отображение: Тип | Урон | Дальность | Качество | Стоимость
@@ -169,7 +169,7 @@ class EquipmentManager {
                 `<i class="fas fa-crosshairs equipment-field-icon"></i>${item.damage || '0'} (${item.damageType || 'не указан'})`
             ];
             if (item.range) detailsParts.push(`<i class="fas fa-arrows-alt equipment-field-icon"></i>${item.range}`);
-            detailsParts.push(`<i class="fas fa-star equipment-field-icon"></i><span class="${qualityClass}">Качество: ${item.quality || '1'}</span>`);
+            detailsParts.push(`<i class="fas fa-star equipment-field-icon"></i><span class="${qualityClass}">Качество: ${item.quality !== undefined ? item.quality : '1'}</span>`);
             detailsParts.push(`<i class="fas fa-coins equipment-field-icon"></i>${item.cost || 0} гео`);
 
             compactDetails = `<div class="item-compact-details"><small>${detailsParts.join(' • ')}</small></div>`;
@@ -182,7 +182,7 @@ class EquipmentManager {
             // Компактное отображение: ПУ | Качество | Прочность | Стоимость
             let detailsParts = [
                 `<i class="fas fa-shield-alt equipment-field-icon"></i>ПУ: ${item.absorption || '0'}`,
-                `<i class="fas fa-star equipment-field-icon"></i><span class="${qualityClass}">Качество: ${item.quality || '1'}</span>`
+                `<i class="fas fa-star equipment-field-icon"></i><span class="${qualityClass}">Качество: ${item.quality !== undefined ? item.quality : '1'}</span>`
             ];
             if (item.durability !== undefined) {
                 detailsParts.push(`<i class="fas fa-heart equipment-field-icon"></i>Прочность: ${item.durability}`);
@@ -465,7 +465,7 @@ class EquipmentManager {
                         </div>
                         <div class="form-group">
                             <label for="weapon-quality"><i class="fas fa-star equipment-field-icon"></i>Качество</label>
-                            <input type="number" step="1" min="1" id="weapon-quality" class="form-control" value="${equipment?.quality || 1}">
+                            <input type="number" step="1" id="weapon-quality" class="form-control" value="${equipment?.quality !== undefined ? equipment.quality : 1}">
                         </div>
                     </div>
                     <div class="form-group">
@@ -488,7 +488,7 @@ class EquipmentManager {
                     </div>
                     <div class="form-group">
                         <label for="armor-quality"><i class="fas fa-star equipment-field-icon"></i>Качество</label>
-                        <input type="number" step="1" min="1" id="armor-quality" class="form-control" value="${equipment?.quality || 1}">
+                        <input type="number" step="1" id="armor-quality" class="form-control" value="${equipment?.quality !== undefined ? equipment.quality : 1}">
                     </div>
                     <div class="form-group">
                         <label for="armor-durability"><i class="fas fa-heart equipment-field-icon"></i>Прочность</label>
@@ -607,12 +607,12 @@ class EquipmentManager {
             equipmentData.range = document.getElementById('weapon-range').value;
             equipmentData.damage = document.getElementById('weapon-damage').value;
             equipmentData.damageType = document.getElementById('weapon-damage-type').value;
-            equipmentData.quality = parseInt(document.getElementById('weapon-quality').value) || 1;
+            equipmentData.quality = parseInt(document.getElementById('weapon-quality').value);
             equipmentData.modifications = document.getElementById('weapon-modifications').value;
             equipmentData.used = document.getElementById('weapon-used').checked;
         } else if (category === 'armor') {
             equipmentData.absorption = document.getElementById('armor-absorption').value;
-            equipmentData.quality = parseInt(document.getElementById('armor-quality').value) || 1;
+            equipmentData.quality = parseInt(document.getElementById('armor-quality').value);
             equipmentData.durability = document.getElementById('armor-durability').value;
             equipmentData.modifications = document.getElementById('armor-modifications').value;
             equipmentData.used = document.getElementById('armor-used').checked;

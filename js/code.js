@@ -760,10 +760,7 @@ class CharacterSheet {
     }
 
     handleReset() {
-        if (confirm('Сбросить все данные персонажа? Это действие нельзя отменить.')) {
-            localStorage.removeItem('hk_rpg_character');
-            location.reload();
-        }
+        this.resetCurrentProfile();
     }
 
     setupActionsPanelDrag() {
@@ -1115,7 +1112,22 @@ class CharacterSheet {
 
     hasProfileData(profileId) {
         const storageKey = this.getProfileStorageKey(profileId);
-        return localStorage.getItem(storageKey) !== null;
+        const saved = localStorage.getItem(storageKey);
+        if (!saved) return false;
+        
+        try {
+            const data = JSON.parse(saved);
+            // Проверяем наличие значимых данных
+            if (data.characterName && data.characterName.trim() !== '') return true;
+            if (data.equipment && data.equipment.length > 0) return true;
+            if (data.traits && data.traits.length > 0) return true;
+            if (data.statuses && data.statuses.length > 0) return true;
+            if (data.charms && data.charms.length > 0) return true;
+            if (data.geo && data.geo > 0) return true;
+            return false;
+        } catch (e) {
+            return false;
+        }
     }
 
     updateProfileButtonsDisplay() {
@@ -1230,11 +1242,6 @@ class CharacterSheet {
                 const profileId = e.currentTarget.dataset.profile;
                 this.switchProfile(profileId);
             });
-        });
-        
-        // Обработчик для кнопки сброса профиля
-        document.getElementById('resetProfileBtn')?.addEventListener('click', () => {
-            this.resetCurrentProfile();
         });
     }
 }
