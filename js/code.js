@@ -288,80 +288,19 @@ class CharacterSheet {
             this.centerActionsPanel();
         });
 
+        // Кнопка порядка блоков
+        document.getElementById('blockOrderBtn')?.addEventListener('click', () => {
+            this.showBlockOrderModal();
+        });
+
         // Обработчик изменения имени персонажа
         document.getElementById('character-name')?.addEventListener('input', (e) => {
             this.state.characterName = e.target.value;
             this.saveState();
         });
 
-        // Drag and drop для блоков
-        this.setupDragAndDrop();
-
         // Drag and drop для actions panel
         this.setupActionsPanelDrag();
-    }
-    
-    setupDragAndDrop() {
-        const container = document.getElementById('blocksContainer');
-
-        let draggedBlock = null;
-
-        container.addEventListener('dragstart', (e) => {
-            const block = e.target.closest('.block');
-            if (block) {
-                draggedBlock = block;
-                draggedBlock.classList.add('dragging');
-
-                // Устанавливаем данные для drag and drop
-                e.dataTransfer.setData('text/plain', draggedBlock.id);
-                e.dataTransfer.effectAllowed = 'move';
-            }
-        });
-
-        container.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            const afterElement = this.getDragAfterElement(container, e.clientY);
-            const draggable = document.querySelector('.dragging');
-
-            if (afterElement == null) {
-                container.appendChild(draggable);
-            } else {
-                container.insertBefore(draggable, afterElement);
-            }
-        });
-
-        container.addEventListener('dragend', (e) => {
-            const dragged = document.querySelector('.dragging');
-            if (dragged) {
-                dragged.classList.remove('dragging');
-
-                // Обновляем порядок блоков в состоянии
-                this.updateBlockOrder();
-            }
-        });
-    }
-    
-    getDragAfterElement(container, y) {
-        const draggableElements = [...container.querySelectorAll('.block:not(.dragging)')];
-        
-        return draggableElements.reduce((closest, child) => {
-            const box = child.getBoundingClientRect();
-            const offset = y - box.top - box.height / 2;
-            
-            if (offset < 0 && offset > closest.offset) {
-                return { offset: offset, element: child };
-            } else {
-                return closest;
-            }
-        }, { offset: Number.NEGATIVE_INFINITY }).element;
-    }
-    
-    updateBlockOrder() {
-        const blocks = document.querySelectorAll('.block');
-        const newOrder = Array.from(blocks).map(block => block.id.replace('block-', ''));
-        
-        this.state.blockOrder = newOrder;
-        this.saveState();
     }
     
     toggleBlockCollapse(blockId) {
@@ -423,13 +362,12 @@ class CharacterSheet {
         const block = document.createElement('div');
         block.className = 'block';
         block.id = `block-${blockId}`;
-        block.draggable = true;
 
         const blockType = blockTypes[blockId];
 
         // Добавляем кнопку примечания для блока "Малые продвижения"
-        const noteButton = blockId === 'advancements' 
-            ? `<button class="note-block-btn" title="Примечание"><i class="fas fa-info-circle"></i></button>` 
+        const noteButton = blockId === 'advancements'
+            ? `<button class="note-block-btn" title="Примечание"><i class="fas fa-info-circle"></i></button>`
             : '';
 
         block.innerHTML = `
@@ -446,7 +384,7 @@ class CharacterSheet {
                 <!-- Контент будет добавлен соответствующим модулем -->
             </div>
         `;
-        
+
         // Добавляем обработчик для сворачивания
         const toggleBtn = block.querySelector('.toggle-block');
         const self = this; // Сохраняем контекст
@@ -1242,6 +1180,238 @@ class CharacterSheet {
                 const profileId = e.currentTarget.dataset.profile;
                 this.switchProfile(profileId);
             });
+        });
+    }
+
+    // Модальное окно для изменения порядка блоков
+    showBlockOrderModal() {
+        // Проверяем, существует ли уже модальное окно
+        const existingModal = document.getElementById('blockOrderModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+
+        const blockTypes = {
+            'characteristics': { title: 'Характеристики', icon: 'fas fa-chart-bar' },
+            'statuses': { title: 'Активные статусы', icon: 'fas fa-hourglass-half' },
+            'traits': { title: 'Черты', icon: 'fas fa-star' },
+            'equipment': { title: 'Снаряжение', icon: 'fas fa-shield-alt' },
+            'nonCombatSkills': { title: 'Умения', icon: 'fas fa-user-friends' },
+            'combatSkills': { title: 'Боевые навыки', icon: 'fas fa-fist-raised' },
+            'paths': { title: 'Ранги пути', icon: 'fas fa-road' },
+            'charms': { title: 'Амулеты', icon: 'fas fa-gem' },
+            'advancements': { title: 'Малые продвижения', icon: 'fas fa-arrow-up' }
+        };
+
+        const modal = document.createElement('div');
+        modal.id = 'blockOrderModal';
+        modal.className = 'modal active';
+        modal.innerHTML = `
+            <div class="modal-content block-order-modal">
+                <div class="modal-header">
+                    <h3><i class="fas fa-sort"></i> Порядок блоков</h3>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p class="modal-description">Перетаскивайте блоки мышкой, чтобы изменить их порядок. Затем нажмите "Сохранить".</p>
+                    <div class="block-order-list" id="blockOrderList"></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" id="saveBlockOrderBtn"><i class="fas fa-save"></i> Сохранить</button>
+                    <button class="btn btn-secondary" id="cancelBlockOrderBtn"><i class="fas fa-times"></i> Отмена</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        // Рендерим список блоков
+        const listContainer = modal.querySelector('#blockOrderList');
+        this.state.blockOrder.forEach((blockId, index) => {
+            const blockType = blockTypes[blockId];
+            if (blockType) {
+                const item = document.createElement('div');
+                item.className = 'block-order-item';
+                item.dataset.blockId = blockId;
+                item.draggable = true;
+                item.innerHTML = `
+                    <span class="block-order-drag-handle"><i class="fas fa-grip-vertical"></i></span>
+                    <span class="block-order-icon"><i class="${blockType.icon}"></i></span>
+                    <span class="block-order-title">${blockType.title}</span>
+                    <div class="block-order-controls">
+                        <button class="block-order-up" data-index="${index}" ${index === 0 ? 'disabled' : ''}>
+                            <i class="fas fa-chevron-up"></i>
+                        </button>
+                        <button class="block-order-down" data-index="${index}" ${index === this.state.blockOrder.length - 1 ? 'disabled' : ''}>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                    </div>
+                `;
+                listContainer.appendChild(item);
+            }
+        });
+
+        // Добавляем обработчики
+        this.setupBlockOrderModalEventListeners(modal);
+    }
+
+    setupBlockOrderModalEventListeners(modal) {
+        const self = this;
+        let draggedItem = null;
+
+        // Закрытие модального окна
+        modal.querySelector('.modal-close').addEventListener('click', () => {
+            modal.remove();
+        });
+
+        // Кнопка отмены
+        modal.querySelector('#cancelBlockOrderBtn').addEventListener('click', () => {
+            modal.remove();
+        });
+
+        // Кнопка сохранения
+        modal.querySelector('#saveBlockOrderBtn').addEventListener('click', () => {
+            const newOrder = Array.from(modal.querySelectorAll('.block-order-item')).map(item => item.dataset.blockId);
+            this.state.blockOrder = newOrder;
+            this.saveState();
+            this.renderBlocks();
+
+            // Небольшая задержка чтобы DOM успел обновиться
+            setTimeout(() => {
+                // Перерисовываем содержимое всех блоков
+                if (window.characteristicsManager) {
+                    window.characteristicsManager.renderBlock();
+                    window.characteristicsManager.setupEventListeners();
+                }
+                if (window.statusesManager) {
+                    window.statusesManager.renderBlock();
+                    window.statusesManager.setupEventListeners();
+                }
+                if (window.traitsManager) {
+                    window.traitsManager.renderBlock();
+                    window.traitsManager.refreshEventListeners();
+                }
+                if (window.equipmentManager) {
+                    window.equipmentManager.renderBlock();
+                    window.equipmentManager.setupEventListeners();
+                }
+                if (window.nonCombatSkillsManager) {
+                    window.nonCombatSkillsManager.renderBlock();
+                    window.nonCombatSkillsManager.setupEventListeners();
+                }
+                if (window.combatSkillsManager) {
+                    window.combatSkillsManager.renderBlock();
+                    window.combatSkillsManager.setupEventListeners();
+                }
+                if (window.pathsManager) {
+                    window.pathsManager.renderBlock();
+                    window.pathsManager.setupEventListeners();
+                }
+                if (window.charmsManager) {
+                    window.charmsManager.renderBlock();
+                    window.charmsManager.setupEventListeners();
+                }
+                if (window.advancementsManager) {
+                    window.advancementsManager.renderBlock();
+                    window.advancementsManager.setupEventListeners();
+                }
+            }, 0);
+
+            modal.remove();
+        });
+
+        // Drag and drop для элементов списка
+        const listContainer = modal.querySelector('#blockOrderList');
+
+        listContainer.addEventListener('dragstart', (e) => {
+            const item = e.target.closest('.block-order-item');
+            if (item) {
+                draggedItem = item;
+                item.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+            }
+        });
+
+        listContainer.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            const afterElement = this.getBlockOrderDragAfterElement(listContainer, e.clientY);
+            if (afterElement == null) {
+                listContainer.appendChild(draggedItem);
+            } else {
+                listContainer.insertBefore(draggedItem, afterElement);
+            }
+        });
+
+        listContainer.addEventListener('dragend', () => {
+            if (draggedItem) {
+                draggedItem.classList.remove('dragging');
+                draggedItem = null;
+                this.updateBlockOrderButtons(listContainer);
+            }
+        });
+
+        // Кнопки вверх/вниз
+        listContainer.addEventListener('click', (e) => {
+            const upBtn = e.target.closest('.block-order-up');
+            const downBtn = e.target.closest('.block-order-down');
+
+            if (upBtn) {
+                const index = parseInt(upBtn.dataset.index);
+                if (index > 0) {
+                    this.swapBlockOrderItems(listContainer, index, index - 1);
+                }
+            } else if (downBtn) {
+                const index = parseInt(downBtn.dataset.index);
+                if (index < listContainer.children.length - 1) {
+                    this.swapBlockOrderItems(listContainer, index, index + 1);
+                }
+            }
+        });
+    }
+
+    getBlockOrderDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('.block-order-item:not(.dragging)')];
+
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+
+    swapBlockOrderItems(container, index1, index2) {
+        const items = Array.from(container.children);
+        const item1 = items[index1];
+        const item2 = items[index2];
+
+        if (index1 < index2) {
+            container.insertBefore(item1, item2.nextSibling);
+        } else {
+            container.insertBefore(item2, item1);
+        }
+
+        this.updateBlockOrderButtons(container);
+    }
+
+    updateBlockOrderButtons(container) {
+        const items = Array.from(container.children);
+        items.forEach((item, index) => {
+            const upBtn = item.querySelector('.block-order-up');
+            const downBtn = item.querySelector('.block-order-down');
+
+            if (upBtn) {
+                upBtn.disabled = index === 0;
+                upBtn.dataset.index = index;
+            }
+            if (downBtn) {
+                downBtn.disabled = index === items.length - 1;
+                downBtn.dataset.index = index;
+            }
         });
     }
 }

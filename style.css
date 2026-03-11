@@ -211,7 +211,6 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    cursor: move;
 }
 
 .block-header h2 {
@@ -250,6 +249,30 @@ body {
 .note-block-btn:hover {
     background-color: rgba(255, 255, 255, 0.2);
     transform: scale(1.1);
+}
+
+/* Кнопка перетаскивания блока */
+.drag-block-btn {
+    background: none;
+    border: none;
+    color: white;
+    cursor: grab;
+    font-size: 1rem;
+    padding: 4px 6px;
+    transition: all 0.2s ease;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.drag-block-btn:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+}
+
+.drag-block-btn:active {
+    cursor: grabbing;
 }
 
 .block-content {
@@ -1614,6 +1637,15 @@ body {
     background-color: #2980b9;
 }
 
+.order-btn {
+    background-color: var(--accent-yellow);
+    color: #333;
+}
+
+.order-btn:hover {
+    background-color: #f39c12;
+}
+
 .reset-btn {
     background-color: var(--accent-red);
     color: white;
@@ -2005,4 +2037,147 @@ body {
     .actions-content {
         gap: 8px;
     }
+}
+
+/* Модальное окно порядка блоков */
+.block-order-modal {
+    max-width: 500px;
+}
+
+.block-order-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 15px;
+}
+
+.block-order-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    background-color: var(--light-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    cursor: grab;
+    transition: all 0.2s ease;
+}
+
+.block-order-item:hover {
+    background-color: rgba(52, 152, 219, 0.1);
+    border-color: var(--accent-blue);
+}
+
+.block-order-item.dragging {
+    opacity: 0.5;
+    cursor: grabbing;
+}
+
+.block-order-drag-handle {
+    color: var(--primary-color);
+    cursor: grab;
+    padding: 4px;
+    font-size: 1.1rem;
+}
+
+.block-order-drag-handle:hover {
+    color: var(--accent-blue);
+}
+
+.block-order-icon {
+    color: var(--primary-color);
+    font-size: 1.2rem;
+    width: 24px;
+    text-align: center;
+}
+
+.block-order-title {
+    flex: 1;
+    font-weight: 500;
+}
+
+.block-order-controls {
+    display: flex;
+    gap: 4px;
+}
+
+.block-order-controls button {
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--border-color);
+    background-color: white;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    color: var(--primary-color);
+}
+
+.block-order-controls button:hover:not(:disabled) {
+    background-color: var(--accent-blue);
+    color: white;
+    border-color: var(--accent-blue);
+}
+
+.block-order-controls button:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.modal-description {
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+}
+
+.modal-footer {
+    padding: 15px 20px;
+    background-color: var(--light-bg);
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    border-top: 1px solid var(--border-color);
+}
+
+.btn-primary {
+    background-color: var(--accent-blue);
+    color: white;
+    border: none;
+}
+
+.btn-primary:hover {
+    background-color: #2980b9;
+}
+
+.btn-secondary {
+    background-color: #95a5a6;
+    color: white;
+    border: none;
+}
+
+.btn-secondary:hover {
+    background-color: #7f8c8d;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 2rem;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+    color: var(--accent-red);
+    transform: scale(1.1);
 }
