@@ -1356,11 +1356,15 @@ class CharacterSheet {
             const downBtn = e.target.closest('.block-order-down');
 
             if (upBtn) {
+                e.preventDefault();
+                e.stopPropagation();
                 const index = parseInt(upBtn.dataset.index);
                 if (index > 0) {
                     this.swapBlockOrderItems(listContainer, index, index - 1);
                 }
             } else if (downBtn) {
+                e.preventDefault();
+                e.stopPropagation();
                 const index = parseInt(downBtn.dataset.index);
                 if (index < listContainer.children.length - 1) {
                     this.swapBlockOrderItems(listContainer, index, index + 1);
@@ -1388,13 +1392,23 @@ class CharacterSheet {
         const items = Array.from(container.children);
         const item1 = items[index1];
         const item2 = items[index2];
-
+        
+        // Используем временный элемент для надёжного обмена
+        const temp = document.createElement('div');
+        
         if (index1 < index2) {
+            // Движение вниз
+            container.insertBefore(temp, item1);
             container.insertBefore(item1, item2.nextSibling);
+            container.insertBefore(item2, temp);
         } else {
-            container.insertBefore(item2, item1);
+            // Движение вверх
+            container.insertBefore(temp, item2);
+            container.insertBefore(item2, item1.nextSibling);
+            container.insertBefore(item1, temp);
         }
-
+        
+        container.removeChild(temp);
         this.updateBlockOrderButtons(container);
     }
 
