@@ -805,6 +805,7 @@ class CharacteristicsManager {
             might: 'Мощь',
             insight: 'Проницательность',
             shell: 'Панцирь',
+            absorption: 'Поглощение',
             grace: 'Грация',
             attractiveness: 'Привлекательность',
             horror: 'Жуть',
