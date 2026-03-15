@@ -823,19 +823,16 @@ body {
 
 .skill-section-content {
     padding: 10px;
-    transition: grid-template-rows 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
-    display: grid;
-    grid-template-rows: 1fr;
+    transition: max-height 0.5s ease, opacity 0.3s ease, padding 0.3s ease;
+    max-height: 10000px;
     opacity: 1;
+    overflow: visible;
 }
 
 .skill-section-content.collapsed {
-    grid-template-rows: 0fr;
+    max-height: 0;
     padding: 0;
     opacity: 0;
-}
-
-.skill-section-content > * {
     overflow: hidden;
 }
 
@@ -1043,15 +1040,14 @@ body {
     background-color: var(--light-bg);
     border-radius: 4px;
     border-left: 3px solid transparent;
-    display: grid;
-    grid-template-rows: 0fr;
+    max-height: 0;
     overflow: hidden;
-    transition: grid-template-rows 0.3s ease, border-color 0.3s ease, padding 0.3s ease, margin 0.3s ease;
+    transition: max-height 0.3s ease, border-color 0.3s ease, padding 0.3s ease, margin 0.3s ease;
     box-sizing: border-box;
 }
 
 .trait-description:not(.hidden) {
-    grid-template-rows: 1fr;
+    max-height: 2000px;
     border-left-color: var(--accent-blue);
     padding: 8px !important;
     margin-top: 8px !important;
@@ -1082,15 +1078,14 @@ body {
     background-color: var(--light-bg);
     border-radius: 4px;
     border-left: 3px solid transparent;
-    display: grid;
-    grid-template-rows: 0fr;
+    max-height: 0;
     overflow: hidden;
-    transition: grid-template-rows 0.3s ease, border-color 0.3s ease, padding 0.3s ease, margin 0.3s ease;
+    transition: max-height 0.3s ease, border-color 0.3s ease, padding 0.3s ease, margin 0.3s ease;
     box-sizing: border-box;
 }
 
 .item-modifications:not(.hidden) {
-    grid-template-rows: 1fr;
+    max-height: 2000px;
     border-left-color: var(--accent-blue);
     padding: 8px !important;
     margin-top: 8px !important;
@@ -1121,15 +1116,14 @@ body {
     background-color: var(--light-bg);
     border-radius: 4px;
     border-left: 3px solid transparent;
-    display: grid;
-    grid-template-rows: 0fr;
+    max-height: 0;
     overflow: hidden;
-    transition: grid-template-rows 0.3s ease, border-color 0.3s ease, padding 0.3s ease, margin 0.3s ease;
+    transition: max-height 0.3s ease, border-color 0.3s ease, padding 0.3s ease, margin 0.3s ease;
     box-sizing: border-box;
 }
 
 .charm-description:not(.hidden) {
-    grid-template-rows: 1fr;
+    max-height: 3000px;
     border-left-color: var(--accent-blue);
     padding: 8px !important;
     margin-top: 8px !important;
@@ -1169,15 +1163,14 @@ body {
     border-radius: 4px;
     border-left: 3px solid transparent;
     font-size: 0.9rem;
-    display: grid;
-    grid-template-rows: 0fr;
+    max-height: 0;
     overflow: hidden;
-    transition: grid-template-rows 0.3s ease, border-color 0.3s ease, padding 0.3s ease, margin 0.3s ease;
+    transition: max-height 0.3s ease, border-color 0.3s ease, padding 0.3s ease, margin 0.3s ease;
     box-sizing: border-box;
 }
 
 .status-description:not(.hidden) {
-    grid-template-rows: 1fr;
+    max-height: 2000px;
     border-left-color: var(--accent-blue);
     padding: 8px !important;
     margin-top: 5px !important;
@@ -1210,15 +1203,14 @@ body {
     border-radius: 4px;
     border-left: 3px solid transparent;
     font-size: 0.9rem;
-    display: grid;
-    grid-template-rows: 0fr;
+    max-height: 0;
     overflow: hidden;
-    transition: grid-template-rows 0.3s ease, border-color 0.3s ease, padding 0.3s ease, margin 0.3s ease;
+    transition: max-height 0.3s ease, border-color 0.3s ease, padding 0.3s ease, margin 0.3s ease;
     box-sizing: border-box;
 }
 
 .skill-description:not(.hidden) {
-    grid-template-rows: 1fr;
+    max-height: 2000px;
     border-left-color: var(--accent-blue);
     padding: 8px !important;
     margin-top: 5px !important;
@@ -1250,15 +1242,14 @@ body {
     background-color: var(--light-bg);
     border-radius: 4px;
     font-size: 0.9rem;
-    display: grid;
-    grid-template-rows: 0fr;
+    max-height: 0;
     overflow: hidden;
-    transition: grid-template-rows 0.3s ease, padding 0.3s ease, margin 0.3s ease;
+    transition: max-height 0.3s ease, padding 0.3s ease, margin 0.3s ease;
     box-sizing: border-box;
 }
 
 .rank-description:not(.hidden) {
-    grid-template-rows: 1fr;
+    max-height: 3000px;
     padding: 8px !important;
     margin-top: 5px !important;
 }
@@ -1285,22 +1276,20 @@ body {
 /* Описание ритуала/боевого навыка */
 .ritual-description {
     box-sizing: border-box;
-    background-color: transparent !important;
-    padding: 4px 0 !important;
-    display: grid;
-    grid-template-rows: 1fr;
-    transition: grid-template-rows 0.3s ease, padding 0.3s ease, margin 0.3s ease, opacity 0.3s ease;
+    background-color: var(--light-bg) !important;
+    padding: 8px !important;
+    border-radius: 4px;
+    max-height: 5000px;
+    overflow: hidden;
+    transition: max-height 0.3s ease, padding 0.3s ease, margin 0.3s ease, opacity 0.3s ease;
     opacity: 1;
 }
 
 .ritual-description.collapsed {
-    grid-template-rows: 0fr;
+    max-height: 0 !important;
     padding: 0 !important;
+    margin: 0 !important;
     opacity: 0;
-}
-
-.ritual-description > * {
-    overflow: hidden;
 }
 
 .ritual-description p {
@@ -1594,22 +1583,20 @@ body {
 
 .actions-content {
     padding: 15px;
-    display: grid;
-    grid-template-rows: 1fr;
+    display: flex;
+    flex-direction: column;
     gap: 10px;
+    max-height: 2000px;
     opacity: 1;
-    transition: grid-template-rows 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+    transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+    overflow: hidden;
 }
 
 .actions-content.collapsed {
-    grid-template-rows: 0fr;
+    max-height: 0;
     opacity: 0;
     padding-top: 0;
     padding-bottom: 0;
-}
-
-.actions-content > * {
-    overflow: hidden;
 }
 
 .action-btn {

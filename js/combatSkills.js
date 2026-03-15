@@ -310,7 +310,7 @@ class CombatSkillsManager {
                                 <i class="fas fa-chevron-${this.collapsedDescriptions[index] ? 'down' : 'up'}"></i>
                                 <span>${this.collapsedDescriptions[index] ? 'Показать описание' : 'Скрыть описание'}</span>
                             </button>
-                            <div class="ritual-description ${this.collapsedDescriptions[index] ? 'collapsed' : ''}" style="background: var(--light-bg); padding: 8px; border-radius: 4px;">
+                            <div class="ritual-description ${this.collapsedDescriptions[index] ? 'collapsed' : ''}">
                                 ${this.formatDescription(skill.description)}
                             </div>
                         </div>
