@@ -823,15 +823,19 @@ body {
 
 .skill-section-content {
     padding: 10px;
-    transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
-    max-height: 1000px;
+    transition: grid-template-rows 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+    display: grid;
+    grid-template-rows: 1fr;
     opacity: 1;
 }
 
 .skill-section-content.collapsed {
-    max-height: 0;
+    grid-template-rows: 0fr;
     padding: 0;
     opacity: 0;
+}
+
+.skill-section-content > * {
     overflow: hidden;
 }
 
@@ -1039,14 +1043,15 @@ body {
     background-color: var(--light-bg);
     border-radius: 4px;
     border-left: 3px solid transparent;
-    max-height: 0;
+    display: grid;
+    grid-template-rows: 0fr;
     overflow: hidden;
-    transition: max-height 0.3s ease, border-color 0.3s ease, padding 0.3s ease, margin 0.3s ease;
+    transition: grid-template-rows 0.3s ease, border-color 0.3s ease, padding 0.3s ease, margin 0.3s ease;
     box-sizing: border-box;
 }
 
 .trait-description:not(.hidden) {
-    max-height: 500px;
+    grid-template-rows: 1fr;
     border-left-color: var(--accent-blue);
     padding: 8px !important;
     margin-top: 8px !important;
@@ -1077,14 +1082,15 @@ body {
     background-color: var(--light-bg);
     border-radius: 4px;
     border-left: 3px solid transparent;
-    max-height: 0;
+    display: grid;
+    grid-template-rows: 0fr;
     overflow: hidden;
-    transition: max-height 0.3s ease, border-color 0.3s ease, padding 0.3s ease, margin 0.3s ease;
+    transition: grid-template-rows 0.3s ease, border-color 0.3s ease, padding 0.3s ease, margin 0.3s ease;
     box-sizing: border-box;
 }
 
 .item-modifications:not(.hidden) {
-    max-height: 500px;
+    grid-template-rows: 1fr;
     border-left-color: var(--accent-blue);
     padding: 8px !important;
     margin-top: 8px !important;
@@ -1115,14 +1121,15 @@ body {
     background-color: var(--light-bg);
     border-radius: 4px;
     border-left: 3px solid transparent;
-    max-height: 0;
+    display: grid;
+    grid-template-rows: 0fr;
     overflow: hidden;
-    transition: max-height 0.3s ease, border-color 0.3s ease, padding 0.3s ease, margin 0.3s ease;
+    transition: grid-template-rows 0.3s ease, border-color 0.3s ease, padding 0.3s ease, margin 0.3s ease;
     box-sizing: border-box;
 }
 
 .charm-description:not(.hidden) {
-    max-height: 1000px;
+    grid-template-rows: 1fr;
     border-left-color: var(--accent-blue);
     padding: 8px !important;
     margin-top: 8px !important;
@@ -1162,14 +1169,15 @@ body {
     border-radius: 4px;
     border-left: 3px solid transparent;
     font-size: 0.9rem;
-    max-height: 0;
+    display: grid;
+    grid-template-rows: 0fr;
     overflow: hidden;
-    transition: max-height 0.3s ease, border-color 0.3s ease, padding 0.3s ease, margin 0.3s ease;
+    transition: grid-template-rows 0.3s ease, border-color 0.3s ease, padding 0.3s ease, margin 0.3s ease;
     box-sizing: border-box;
 }
 
 .status-description:not(.hidden) {
-    max-height: 500px;
+    grid-template-rows: 1fr;
     border-left-color: var(--accent-blue);
     padding: 8px !important;
     margin-top: 5px !important;
@@ -1202,14 +1210,15 @@ body {
     border-radius: 4px;
     border-left: 3px solid transparent;
     font-size: 0.9rem;
-    max-height: 0;
+    display: grid;
+    grid-template-rows: 0fr;
     overflow: hidden;
-    transition: max-height 0.3s ease, border-color 0.3s ease, padding 0.3s ease, margin 0.3s ease;
+    transition: grid-template-rows 0.3s ease, border-color 0.3s ease, padding 0.3s ease, margin 0.3s ease;
     box-sizing: border-box;
 }
 
 .skill-description:not(.hidden) {
-    max-height: 500px;
+    grid-template-rows: 1fr;
     border-left-color: var(--accent-blue);
     padding: 8px !important;
     margin-top: 5px !important;
@@ -1241,14 +1250,15 @@ body {
     background-color: var(--light-bg);
     border-radius: 4px;
     font-size: 0.9rem;
-    max-height: 0;
+    display: grid;
+    grid-template-rows: 0fr;
     overflow: hidden;
-    transition: max-height 0.3s ease, padding 0.3s ease, margin 0.3s ease;
+    transition: grid-template-rows 0.3s ease, padding 0.3s ease, margin 0.3s ease;
     box-sizing: border-box;
 }
 
 .rank-description:not(.hidden) {
-    max-height: 1000px;
+    grid-template-rows: 1fr;
     padding: 8px !important;
     margin-top: 5px !important;
 }
@@ -1277,16 +1287,19 @@ body {
     box-sizing: border-box;
     background-color: transparent !important;
     padding: 4px 0 !important;
-    max-height: 1000px;
-    overflow: hidden;
-    transition: max-height 0.3s ease, padding 0.3s ease, margin 0.3s ease, opacity 0.3s ease;
+    display: grid;
+    grid-template-rows: 1fr;
+    transition: grid-template-rows 0.3s ease, padding 0.3s ease, margin 0.3s ease, opacity 0.3s ease;
     opacity: 1;
 }
 
 .ritual-description.collapsed {
-    max-height: 0;
+    grid-template-rows: 0fr;
     padding: 0 !important;
     opacity: 0;
+}
+
+.ritual-description > * {
     overflow: hidden;
 }
 
@@ -1581,20 +1594,22 @@ body {
 
 .actions-content {
     padding: 15px;
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-rows: 1fr;
     gap: 10px;
-    max-height: 500px;
     opacity: 1;
-    transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
-    overflow: hidden;
+    transition: grid-template-rows 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
 }
 
 .actions-content.collapsed {
-    max-height: 0;
+    grid-template-rows: 0fr;
     opacity: 0;
     padding-top: 0;
     padding-bottom: 0;
+}
+
+.actions-content > * {
+    overflow: hidden;
 }
 
 .action-btn {
