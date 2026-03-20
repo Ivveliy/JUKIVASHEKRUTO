@@ -1276,7 +1276,6 @@ body {
 /* Описание ритуала/боевого навыка */
 .ritual-description {
     box-sizing: border-box;
-    background-color: var(--light-bg) !important;
     padding: 8px !important;
     border-radius: 4px;
     max-height: 5000px;
