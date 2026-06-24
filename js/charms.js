@@ -360,7 +360,7 @@ class CharmsManager {
                     </div>
                     <div class="form-group">
                         <label for="charm-cost">Стоимость (Валюта)</label>
-                        <input type="number" step="1" min="0" id="charm-cost" class="form-control" value="${charm.cost || 0}">
+                        <input type="number" step="1" id="charm-cost" class="form-control" value="${charm.cost || 0}">
                     </div>
                 </div>
                 

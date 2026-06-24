@@ -82,7 +82,7 @@ class TraitsManager {
             might: 'Мощь', insight: 'Проницательность', shell: 'Панцирь', absorption: 'Поглощение', grace: 'Грация',
             attractiveness: 'Привлекательность', horror: 'Жуть', speed: 'Скорость',
             heart: 'Сердца', endurance: 'Выносливость', soul: 'Душа', hunger: 'Голод',
-            load: 'Нагрузка'
+            load: 'Нагрузка', supplies: 'Припасы'
         };
         
         Object.entries(trait.modifiers || {}).forEach(([key, value]) => {
@@ -209,6 +209,10 @@ class TraitsManager {
                         <label for="trait-load">Нагрузка</label>
                         <input type="number" step="1" id="trait-load" class="form-control" value="${trait.modifiers.load || 0}">
                     </div>
+                    <div class="form-group">
+                        <label for="trait-supplies"><i class="fas fa-boxes equipment-field-icon"></i>Припасы</label>
+                        <input type="number" step="1" id="trait-supplies" class="form-control" value="${trait.modifiers.supplies || 0}">
+                    </div>
                 </div>
                 
                 <div class="form-group">
@@ -243,7 +247,8 @@ class TraitsManager {
                 endurance: 0,
                 soul: 0,
                 hunger: 0,
-                load: 0
+                load: 0,
+                supplies: 0
             },
             description: ''
         };
@@ -268,7 +273,8 @@ class TraitsManager {
                 endurance: parseInt(document.getElementById('trait-endurance').value) || 0,
                 soul: parseInt(document.getElementById('trait-soul').value) || 0,
                 hunger: parseInt(document.getElementById('trait-hunger').value) || 0,
-                load: parseInt(document.getElementById('trait-load').value) || 0
+                load: parseInt(document.getElementById('trait-load').value) || 0,
+                supplies: parseInt(document.getElementById('trait-supplies').value) || 0
             },
             description: document.getElementById('trait-description').value
         };

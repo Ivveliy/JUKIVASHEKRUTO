@@ -34,7 +34,7 @@ class EquipmentManager {
                     <div class="geo-display">
                         <strong><i class="fas fa-coins"></i> Гео:</strong>
                         <input type="number" step="1" id="geo-input" class="compact-input"
-                               value="${characterSheet.state.geo || 0}" min="0">
+                               value="${characterSheet.state.geo || 0}">
                     </div>
                     <div class="load-display">
                         <strong><i class="fas fa-weight-hanging"></i> Нагрузка:</strong>
@@ -63,10 +63,10 @@ class EquipmentManager {
         const maxLoad = totalMight + loadModifier + loadAdjustment;
 
         return `
-            <span>${load.current} / ${maxLoad}</span>
+            <span id="equip-load-current">${load.current}</span>
+            <span style="color: #666;">/</span>
             <input type="number" step="0.5" id="max-load-input" class="compact-input"
-                   value="${maxLoad}" min="0" title="Максимальная нагрузка">
-            <small style="color: #666; margin-left: 8px;">(Мощь: ${totalMight}${loadModifier !== 0 ? (loadModifier > 0 ? ' + ' + loadModifier : ' - ' + Math.abs(loadModifier)) : ''}${loadAdjustment !== 0 ? (loadAdjustment > 0 ? ' + ' + loadAdjustment : ' - ' + Math.abs(loadAdjustment)) : ''})</small>
+                   value="${maxLoad}" title="Максимальная нагрузка">
         `;
     }
 
@@ -110,18 +110,28 @@ class EquipmentManager {
                     return sum + (itemCost * quantity);
                 }, 0);
 
+                const collapsedKey = `equipment_${key}`;
+                const isCollapsed = characterSheet.state.collapsedBlocks[collapsedKey] || false;
+
                 html += `
                     <div class="equipment-category">
-                        <h4>
-                            ${category.name}
-                            <span class="category-total-cost">
-                                <i class="fas fa-coins"></i> ${totalCost} гео
+                        <h4 class="equipment-category-header" data-category="${key}">
+                            <span>${category.name}</span>
+                            <span class="equipment-category-controls">
+                                <span class="category-total-cost">
+                                    <i class="fas fa-coins"></i> ${totalCost} гео
+                                </span>
+                                <button class="toggle-equipment-category" title="${isCollapsed ? 'Развернуть' : 'Свернуть'}">
+                                    <i class="fas fa-chevron-${isCollapsed ? 'down' : 'up'}"></i>
+                                </button>
                             </span>
                         </h4>
-                        ${category.items.map((item) => {
-                            const globalIndex = characterSheet.state.equipment.findIndex(eq => eq === item);
-                            return this.renderEquipmentItem(item, globalIndex);
-                        }).join('')}
+                        <div class="equipment-category-content ${isCollapsed ? 'collapsed' : ''}">
+                            ${category.items.map((item) => {
+                                const globalIndex = characterSheet.state.equipment.findIndex(eq => eq === item);
+                                return this.renderEquipmentItem(item, globalIndex);
+                            }).join('')}
+                        </div>
                     </div>
                 `;
             }
@@ -345,6 +355,29 @@ class EquipmentManager {
                 const checkbox = toggle.querySelector('.equipment-use-checkbox');
                 const index = parseInt(checkbox.dataset.index);
                 this.toggleEquipmentUse(index, !checkbox.checked);
+            } else if (e.target.closest('.equipment-category-header')) {
+                e.preventDefault();
+                e.stopPropagation();
+                const header = e.target.closest('.equipment-category-header');
+                // Не срабатываем при клике на кнопки внутри заголовка
+                if (e.target.closest('.toggle-equipment-category') || e.target.closest('.category-total-cost')) return;
+                const categoryKey = header.dataset.category;
+                const content = header.nextElementSibling;
+                const toggleBtn = header.querySelector('.toggle-equipment-category');
+                const icon = toggleBtn ? toggleBtn.querySelector('i') : null;
+
+                const collapsedKey = `equipment_${categoryKey}`;
+                const isCollapsed = characterSheet.state.collapsedBlocks[collapsedKey] || false;
+                characterSheet.state.collapsedBlocks[collapsedKey] = !isCollapsed;
+
+                if (content) {
+                    content.classList.toggle('collapsed');
+                }
+                if (icon) {
+                    icon.className = `fas fa-chevron-${!isCollapsed ? 'down' : 'up'}`;
+                }
+                if (toggleBtn) toggleBtn.title = !isCollapsed ? 'Развернуть' : 'Свернуть';
+                characterSheet.saveState();
             } else if (e.target.closest('.item-quantity-btn')) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -374,6 +407,9 @@ class EquipmentManager {
                 characterSheet.state.loadAdjustment = newMaxLoad - totalMight - loadModifier;
                 characterSheet.saveState();
                 this.updateLoadDisplay();
+                if (window.updateSuppliesDisplay) {
+                    window.updateSuppliesDisplay();
+                }
             }
             if (e.target.id === 'geo-input') {
                 characterSheet.state.geo = parseInt(e.target.value) || 0;
@@ -434,11 +470,11 @@ class EquipmentManager {
                 <div class="form-row">
                     <div class="form-group">
                         <label for="equipment-weight"><i class="fas fa-weight-hanging equipment-field-icon"></i>Вес</label>
-                        <input type="number" step="0.5" min="0" id="equipment-weight" class="form-control" value="${equipment?.weight || 0}" required>
+                        <input type="number" step="0.5" id="equipment-weight" class="form-control" value="${equipment?.weight || 0}" required>
                     </div>
                     <div class="form-group">
                         <label for="equipment-cost"><i class="fas fa-coins equipment-field-icon"></i>Стоимость</label>
-                        <input type="number" step="1" min="0" id="equipment-cost" class="form-control" value="${equipment?.cost || 0}" placeholder="0">
+                        <input type="number" step="1" id="equipment-cost" class="form-control" value="${equipment?.cost || 0}" placeholder="0">
                     </div>
                 </div>
 
@@ -514,7 +550,7 @@ class EquipmentManager {
                     </div>
                     <div class="form-group">
                         <label for="other-quantity"><i class="fas fa-layer-group equipment-field-icon"></i>Количество</label>
-                        <input type="number" step="1" min="1" id="other-quantity" class="form-control" value="${quantity}">
+                        <input type="number" step="1" id="other-quantity" class="form-control" value="${quantity}">
                     </div>
                 </div>
             </form>
@@ -647,18 +683,20 @@ class EquipmentManager {
     
     updateLoadDisplay() {
         const equipmentHeader = document.querySelector('.equipment-header');
-        if (equipmentHeader) {
-            const loadDisplay = this.renderCompactLoadDisplay();
-            const loadDisplayElement = equipmentHeader.querySelector('.load-display');
-            if (loadDisplayElement) {
-                loadDisplayElement.innerHTML = `<strong><i class="fas fa-weight-hanging"></i> Нагрузка:</strong>${loadDisplay}`;
-                // Устанавливаем ширину поля после обновления
-                setTimeout(() => {
-                    const maxLoadInput = document.getElementById('max-load-input');
-                    if (maxLoadInput) this.setInputWidth(maxLoadInput);
-                }, 0);
-            }
-        }
+        if (!equipmentHeader) return;
+        
+        const load = characterSheet.calculateLoad();
+        const baseMight = characterSheet.state.characteristics.base.might;
+        const mightMod = characterSheet.state.characteristics.modifiers.might || 0;
+        const totalMight = baseMight + mightMod;
+        const loadModifier = characterSheet.state.characteristics.modifiers.load || 0;
+        const loadAdjustment = characterSheet.state.loadAdjustment || 0;
+        const maxLoad = totalMight + loadModifier + loadAdjustment;
+        
+        const loadSpan = document.getElementById('equip-load-current');
+        const loadInput = document.getElementById('max-load-input');
+        if (loadSpan) loadSpan.textContent = load.current;
+        if (loadInput) loadInput.value = maxLoad;
     }
     
     createModal(title, content, onSave) {

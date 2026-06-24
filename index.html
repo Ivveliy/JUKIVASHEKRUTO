@@ -18,15 +18,13 @@
             </div>
             <div class="header-controls">
                 <div class="profile-selector">
-                    <div class="profile-row">
-                        <button class="profile-btn" data-profile="1" title="Профиль 1"><i class="fas fa-user"></i> 1</button>
-                        <button class="profile-btn" data-profile="2" title="Профиль 2"><i class="fas fa-user"></i> 2</button>
-                        <button class="profile-btn" data-profile="3" title="Профиль 3"><i class="fas fa-user"></i> 3</button>
+                    <div class="profile-row profile-row-main">
+                        <button class="profile-btn profile-btn-prev" data-profile-role="prev" title="Предыдущий профиль"><i class="fas fa-user"></i> <span class="profile-btn-label">—</span></button>
+                        <button class="profile-btn profile-btn-active" data-profile-role="active" title="Активный профиль"><i class="fas fa-user"></i> <span class="profile-btn-label">—</span></button>
+                        <button class="profile-btn profile-btn-next" data-profile-role="next" title="Следующий профиль"><i class="fas fa-user"></i> <span class="profile-btn-label">—</span></button>
                     </div>
-                    <div class="profile-row">
-                        <button class="profile-btn" data-profile="4" title="Профиль 4"><i class="fas fa-user"></i> 4</button>
-                        <button class="profile-btn" data-profile="5" title="Профиль 5"><i class="fas fa-user"></i> 5</button>
-                        <button class="profile-btn" data-profile="6" title="Профиль 6"><i class="fas fa-user"></i> 6</button>
+                    <div class="profile-row profile-row-switch">
+                        <button class="profile-btn profile-btn-switch" id="profileSwitchBtn" title="Смена профиля"><i class="fas fa-exchange-alt"></i> Смена профиля</button>
                     </div>
                 </div>
                 <button id="centerActionsBtn" class="btn" title="Центрировать меню действий"><i class="fas fa-compress-arrows-alt"></i> Действия</button>
@@ -68,6 +66,7 @@
     <script src="js/paths.js?v=2"></script>
     <script src="js/charms.js?v=2"></script>
     <script src="js/advancements.js?v=2"></script>
+    <script src="js/supplies.js?v=2"></script>
     <script src="js/actions.js?v=2"></script>
 </body>
 </html>

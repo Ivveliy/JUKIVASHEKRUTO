@@ -234,14 +234,14 @@ class StatusesManager {
 
                 <div id="duration-field" class="form-group" style="display: ${status.type === 'other' ? 'block' : 'none'}">
                     <label for="status-duration">Длительность (раунды)</label>
-                    <input type="number" step="1" min="1" id="status-duration" class="form-control" style="height: 40px; font-size: 1.2em;" value="${status.duration || 1}" required>
+                    <input type="number" step="1" id="status-duration" class="form-control" style="height: 40px; font-size: 1.2em;" value="${status.duration || 1}" required>
                 </div>
 
                 <!-- Поля для яда -->
                 <div id="poison-fields" style="display: ${status.type === 'poison' ? 'block' : 'none'}">
                     <div class="form-group">
                         <label for="status-delayed-damage">Отложенный урон (ОУ)</label>
-                        <input type="number" step="1" min="1" id="status-delayed-damage" class="form-control" value="${status.delayedDamage || 1}" required>
+                        <input type="number" step="1" id="status-delayed-damage" class="form-control" value="${status.delayedDamage || 1}" required>
                     </div>
                 </div>
 

@@ -11,18 +11,22 @@ class CharacterSheet {
             combatSkills: [],
             paths: [],
             charms: [],
-            charmSlots: 0, // Ручная корректировка количества слотов (по умолчанию 0)
-            techniqueSlots: 0, // Ячейки Техник от малых продвижений
-            techniqueSlotsManualAdjustment: 0, // Ручная корректировка ячеек техники
+            charmSlots: 0,
+            techniqueSlots: 0,
+            techniqueSlotsManualAdjustment: 0,
             blockOrder: ['characteristics', 'statuses', 'traits', 'equipment',
-                       'nonCombatSkills', 'combatSkills', 'paths', 'charms', 'advancements'],
+                       'nonCombatSkills', 'combatSkills', 'paths', 'charms', 'advancements', 'supplies'],
             collapsedBlocks: {},
             actionsPanelCollapsed: false,
             actionsPanelPosition: { x: null, y: null },
             loadAdjustment: 0,
-            combatSkillsCollapsedSections: {}, // Состояние сворачивания разделов боевых навыков
-            geo: 0, // Гео (аналог) - местная валюта персонажа
-            advancements: [] // Малые продвижения
+            combatSkillsCollapsedSections: {},
+            geo: 0,
+            advancements: [],
+            supplies: [],
+            suppliesMax: 0,
+            suppliesCurrent: 0,
+            suppliesAdjustment: 0
         };
 
         this.init();
@@ -70,8 +74,7 @@ class CharacterSheet {
     }
     
     ensureModifiersIntegrity() {
-        // Обеспечиваем обратную совместимость - добавляем недостающие ключи модификаторов
-        const requiredModifiers = ['might', 'insight', 'shell', 'absorption', 'grace', 'attractiveness', 'horror', 'speed', 'heart', 'endurance', 'soul', 'hunger', 'load'];
+        const requiredModifiers = ['might', 'insight', 'shell', 'absorption', 'grace', 'attractiveness', 'horror', 'speed', 'heart', 'endurance', 'soul', 'hunger', 'load', 'supplies'];
 
         requiredModifiers.forEach(key => {
             if (this.state.characteristics.modifiers[key] === undefined) {
@@ -81,7 +84,6 @@ class CharacterSheet {
     }
     
     init() {
-        // Загружаем активный профиль и инициализируем состояние
         this.loadStateFromProfile();
         this.setupEventListeners();
         this.setupProfileEventListeners();
@@ -89,25 +91,20 @@ class CharacterSheet {
         this.updateAllCharacteristics();
         this.updateProfileButtonsDisplay();
 
-        // Применяем позицию панели только на ПК
         if (window.innerWidth > 768) {
             this.applyActionsPanelPosition();
         } else {
-            // На мобильных восстанавливаем состояние сворачивания
             this.restoreActionsPanelState();
         }
     }
 
     loadStateFromProfile() {
-        // Загружаем состояние из активного профиля
         const profileId = this.getActiveProfile();
         const loaded = this.loadProfile(profileId);
         
         if (!loaded) {
-            // Проверяем наличие старых данных для миграции
             const oldSaved = localStorage.getItem('hk_rpg_character');
             if (oldSaved && profileId === '1') {
-                // Мигрируем старые данные в первый профиль
                 try {
                     const oldState = JSON.parse(oldSaved);
                     this.state = { ...this.state, ...oldState };
@@ -118,27 +115,21 @@ class CharacterSheet {
                     console.error('Ошибка миграции старых данных:', e);
                 }
             } else {
-                // Если профиль пустой, сохраняем текущее состояние по умолчанию
                 this.saveCurrentProfile();
             }
         }
         
-        // Обновляем отображение имени персонажа после загрузки
         this.updateCharacterNameDisplay();
-        
-        // Восстанавливаем состояние сворачивания разделов боевых навыков
         this.restoreCombatSkillsCollapsedState();
     }
     
     saveState() {
-        // Сохраняем состояние сворачивания разделов боевых навыков
         if (window.combatSkillsManager) {
             this.state.combatSkillsCollapsedSections = window.combatSkillsManager.collapsedSections;
         }
 
         const stateToSave = {
             ...this.state,
-            // Сохраняем только данные, не функции
             characteristics: JSON.parse(JSON.stringify(this.state.characteristics)),
             statuses: JSON.parse(JSON.stringify(this.state.statuses)),
             traits: JSON.parse(JSON.stringify(this.state.traits)),
@@ -148,12 +139,12 @@ class CharacterSheet {
             paths: JSON.parse(JSON.stringify(this.state.paths)),
             charms: JSON.parse(JSON.stringify(this.state.charms)),
             advancements: JSON.parse(JSON.stringify(this.state.advancements)),
+            supplies: JSON.parse(JSON.stringify(this.state.supplies)),
             combatSkillsCollapsedSections: this.state.combatSkillsCollapsedSections,
             techniqueSlots: this.state.techniqueSlots || 0,
             techniqueSlotsManualAdjustment: this.state.techniqueSlotsManualAdjustment || 0
         };
 
-        // Сохраняем в активный профиль
         const profileId = this.getActiveProfile();
         const storageKey = this.getProfileStorageKey(profileId);
         localStorage.setItem(storageKey, JSON.stringify(stateToSave));
@@ -180,25 +171,19 @@ class CharacterSheet {
             try {
                 const importedState = JSON.parse(e.target.result);
 
-                // Валидация импортированного состояния
                 if (this.validateImportedState(importedState)) {
                     this.state = {
                         ...this.state,
                         ...importedState
                     };
 
-                    // Обеспечиваем целостность модификаторов для импортированных данных
                     this.ensureModifiersIntegrity();
-
-                    // Восстанавливаем состояние сворачивания разделов боевых навыков ДО отрисовки
                     this.restoreCombatSkillsCollapsedState();
 
                     this.renderBlocks();
-
                     this.updateAllCharacteristics();
                     this.updateCharacterNameDisplay();
 
-                    // Перерисовываем содержимое всех блоков и переназначаем обработчики
                     if (window.characteristicsManager) {
                         window.characteristicsManager.renderBlock();
                         window.characteristicsManager.setupEventListeners();
@@ -235,18 +220,20 @@ class CharacterSheet {
                         window.advancementsManager.renderBlock();
                         window.advancementsManager.setupEventListeners();
                     }
+                    if (window.suppliesManager) {
+                        window.suppliesManager.renderBlock();
+                        window.suppliesManager.setupEventListeners();
+                    }
 
-                    // Сохраняем состояние после всех обновлений
                     this.saveState();
+                    this.updateProfileButtonsDisplay();
 
-                    // Восстанавливаем состояние панели действий
                     if (window.innerWidth > 768) {
                         this.applyActionsPanelPosition();
                     } else {
                         this.restoreActionsPanelState();
                     }
 
-                    // Обновляем обработчики кнопок действий
                     if (window.setupActionButtons) {
                         window.setupActionButtons();
                     }
@@ -264,13 +251,11 @@ class CharacterSheet {
     }
     
     validateImportedState(state) {
-        // Базовая проверка структуры
         const requiredKeys = ['characteristics', 'statuses', 'traits', 'equipment'];
         return requiredKeys.every(key => state.hasOwnProperty(key));
     }
     
     setupEventListeners() {
-        // Экспорт/импорт
         document.getElementById('exportBtn').addEventListener('click', () => this.exportToJSON());
         document.getElementById('importBtn').addEventListener('click', () => {
             document.getElementById('importFile').click();
@@ -279,27 +264,24 @@ class CharacterSheet {
         document.getElementById('importFile').addEventListener('change', (e) => {
             if (e.target.files.length > 0) {
                 this.importFromJSON(e.target.files[0]);
-                e.target.value = ''; // Сбрасываем input
+                e.target.value = '';
             }
         });
 
-        // Кнопка центрирования меню действий
         document.getElementById('centerActionsBtn')?.addEventListener('click', () => {
             this.centerActionsPanel();
         });
 
-        // Кнопка порядка блоков
         document.getElementById('blockOrderBtn')?.addEventListener('click', () => {
             this.showBlockOrderModal();
         });
 
-        // Обработчик изменения имени персонажа
         document.getElementById('character-name')?.addEventListener('input', (e) => {
             this.state.characterName = e.target.value;
             this.saveState();
+            this.updateProfileButtonsDisplay();
         });
 
-        // Drag and drop для actions panel
         this.setupActionsPanelDrag();
     }
     
@@ -326,13 +308,11 @@ class CharacterSheet {
         const container = document.getElementById('blocksContainer');
         container.innerHTML = '';
 
-        // Рендерим блоки в сохраненном порядке
         this.state.blockOrder.forEach(blockId => {
             const blockElement = this.createBlockElement(blockId);
             if (blockElement) {
                 container.appendChild(blockElement);
 
-        // Восстанавливаем свернутое состояние
         if (this.state.collapsedBlocks[blockId]) {
             blockElement.classList.add('collapsed');
             const icon = blockElement.querySelector('.toggle-block i');
@@ -354,7 +334,8 @@ class CharacterSheet {
             'combatSkills': { title: 'Боевые навыки', icon: 'fas fa-fist-raised' },
             'paths': { title: 'Ранги пути', icon: 'fas fa-road' },
             'charms': { title: 'Амулеты', icon: 'fas fa-gem' },
-            'advancements': { title: 'Малые продвижения', icon: 'fas fa-arrow-up' }
+            'advancements': { title: 'Малые продвижения', icon: 'fas fa-arrow-up' },
+            'supplies': { title: 'Припасы', icon: 'fas fa-boxes' }
         };
 
         if (!blockTypes[blockId]) return null;
@@ -365,7 +346,6 @@ class CharacterSheet {
 
         const blockType = blockTypes[blockId];
 
-        // Добавляем кнопку примечания для блока "Малые продвижения"
         const noteButton = blockId === 'advancements'
             ? `<button class="note-block-btn" title="Примечание"><i class="fas fa-info-circle"></i></button>`
             : '';
@@ -385,14 +365,12 @@ class CharacterSheet {
             </div>
         `;
 
-        // Добавляем обработчик для сворачивания
         const toggleBtn = block.querySelector('.toggle-block');
-        const self = this; // Сохраняем контекст
+        const self = this;
         toggleBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             self.toggleBlockCollapse(blockId);
 
-            // Меняем иконку
             const icon = toggleBtn.querySelector('i');
             if (block.classList.contains('collapsed')) {
                 icon.className = 'fas fa-chevron-down';
@@ -401,7 +379,6 @@ class CharacterSheet {
             }
         });
 
-        // Добавляем обработчик для кнопки примечания (для блока "Малые продвижения")
         const noteBtn = block.querySelector('.note-block-btn');
         if (noteBtn) {
             noteBtn.addEventListener('click', (e) => {
@@ -415,61 +392,51 @@ class CharacterSheet {
         return block;
     }
     
-    // Методы для обновления характеристик
     updateAllCharacteristics() {
-        // Сбрасываем модификаторы
         Object.keys(this.state.characteristics.modifiers).forEach(key => {
             this.state.characteristics.modifiers[key] = 0;
         });
 
-        // Добавляем модификаторы от статусов
         this.state.statuses.forEach(status => {
             this.applyStatusModifiers(status);
         });
 
-        // Добавляем модификаторы от черт
         this.state.traits.forEach(trait => {
             this.applyTraitModifiers(trait);
         });
 
-        // Добавляем модификаторы от амулетов
         this.state.charms.forEach(charm => {
             if (charm.equipped) {
                 this.applyCharmModifiers(charm);
             }
         });
 
-        // Добавляем модификаторы от путей
         this.calculatePathBonuses();
-
-        // Добавляем модификаторы от малых продвижений
         this.applyAdvancementModifiers();
-
-        // Применяем эффекты голода
         this.applyHungerEffects();
 
-        // Обновляем отображение
         if (window.updateCharacteristicsDisplay) {
             window.updateCharacteristicsDisplay();
         }
 
-        // Обновляем другие блоки, которые зависят от характеристик
         if (window.updateEquipmentDisplay) {
             window.updateEquipmentDisplay();
         }
 
-        if (window.updateCharmsDisplay) {
-            window.updateCharmsDisplay();
+        if (window.updateSuppliesDisplay) {
+            window.updateSuppliesDisplay();
         }
 
-        // Обновляем Ячейки Техник
+        if (window.updateCharmSlotsFromPaths) {
+            window.updateCharmSlotsFromPaths();
+        }
+
         if (window.updateCombatSkillsTechniqueSlots) {
             window.updateCombatSkillsTechniqueSlots();
         }
     }
     
     applyStatusModifiers(status) {
-        // Применяем постоянные модификаторы
         Object.keys(status.modifiers || {}).forEach(key => {
             if (this.state.characteristics.modifiers.hasOwnProperty(key)) {
                 this.state.characteristics.modifiers[key] += status.modifiers[key];
@@ -510,15 +477,12 @@ class CharacterSheet {
     }
 
     applySkillModifiers(skill) {
-        // Non-combat skills don't modify characteristics - they're just reminders
-        // This method is kept for compatibility but does nothing
     }
     
     applyHungerEffects() {
         const satiety = this.state.characteristics.base.satiety;
 
         if (satiety < -50 && satiety >= -100) {
-            // -1 к главным характеристикам
             this.state.characteristics.modifiers.might -= 1;
             this.state.characteristics.modifiers.insight -= 1;
             this.state.characteristics.modifiers.shell -= 1;
@@ -527,7 +491,6 @@ class CharacterSheet {
     }
 
     applyAdvancementModifiers() {
-        // Применяем модификаторы от малых продвижений
         if (!this.state.advancements) return;
 
         this.state.advancements.forEach(adv => {
@@ -544,32 +507,24 @@ class CharacterSheet {
         });
     }
     
-    // Восстановление души при отдыхе
     calculateSoulRecovery() {
         const satiety = this.state.characteristics.base.satiety;
         const maxSoul = this.state.characteristics.base.soul + this.state.characteristics.modifiers.soul;
         
         if (satiety >= 0) {
-            // Полное восстановление
             return maxSoul;
         } else if (satiety >= -50) {
-            // Половина души, округленная вверх
             return Math.ceil(maxSoul / 2);
         } else {
-            // Половина души (при голоде ниже -50)
             return Math.ceil(maxSoul / 2);
         }
     }
     
-    // Расчет нагрузки
     calculateLoad() {
         const mightTotal = this.state.characteristics.base.might +
                           this.state.characteristics.modifiers.might;
         
-        // Учитываем модификатор нагрузки от черт и других источников
         const loadModifier = this.state.characteristics.modifiers.load || 0;
-        
-        // Учитываем ручную корректировку максимальной нагрузки
         const loadAdjustment = this.state.loadAdjustment || 0;
         
         const maxLoad = mightTotal + loadModifier + loadAdjustment;
@@ -577,6 +532,10 @@ class CharacterSheet {
         let totalWeight = 0;
         this.state.equipment.forEach(item => {
             totalWeight += item.weight || 0;
+        });
+        // Добавляем вес из припасов (еда и ловушки имеют вес)
+        this.state.supplies.forEach(item => {
+            totalWeight += (item.weight || 0) * (item.quantity || 1);
         });
 
         return {
@@ -587,13 +546,11 @@ class CharacterSheet {
         };
     }
 
-    // Изменение характеристик
     changeCharacteristic(button, amount) {
         const charName = button.dataset.char;
         const type = button.dataset.type || 'base';
 
         if (type === 'current') {
-            // Для текущих значений (сердца, выносливость, душа)
             const max = this.state.characteristics.base[charName] +
                        this.state.characteristics.modifiers[charName];
 
@@ -605,7 +562,6 @@ class CharacterSheet {
                     Math.max(this.state.characteristics.current[charName] - 1, 0);
             }
         } else {
-            // Для базовых значений
             this.state.characteristics.base[charName] += amount;
         }
 
@@ -613,9 +569,7 @@ class CharacterSheet {
         if (window.characteristicsManager) window.characteristicsManager.updateDisplay();
     }
 
-    // Actions methods
     handleRest() {
-        // Apply effects based on current satiety
         const currentSatiety = this.state.characteristics.base.satiety;
         const maxSoul = this.state.characteristics.base.soul + this.state.characteristics.modifiers.soul;
         const maxHeart = this.state.characteristics.base.heart + this.state.characteristics.modifiers.heart;
@@ -623,34 +577,28 @@ class CharacterSheet {
         let message = `Отдых в лагере завершен.\n`;
 
         if (currentSatiety >= 0) {
-            // Full soul recovery and +1 heart
             this.state.characteristics.current.soul = maxSoul;
             this.state.characteristics.current.heart = Math.min(this.state.characteristics.current.heart + 1, maxHeart);
             message += `Полное восстановление души. Восстановлено 1 сердце.\n`;
         } else if (currentSatiety >= -50) {
-            // Half soul recovery (rounded up)
             const recovery = Math.ceil(maxSoul / 2);
             this.state.characteristics.current.soul = Math.min(this.state.characteristics.current.soul + recovery, maxSoul);
             message += `Восстановлено ${recovery} души.\n`;
         } else if (currentSatiety >= -100) {
-            // -1 to all main characteristics, can roll twice for food search
             this.state.characteristics.base.might -= 1;
             this.state.characteristics.base.insight -= 1;
             this.state.characteristics.base.shell -= 1;
             this.state.characteristics.base.grace -= 1;
             message += `-1 ко всем главным характеристикам. Можно дважды бросить на поиск еды.\n`;
         } else {
-            // Death from hunger
             message += `Смерть от голода!\n`;
         }
 
-        // Calculate total hunger and subtract from satiety
         const totalHunger = this.state.characteristics.base.hunger + this.state.characteristics.modifiers.hunger;
         this.state.characteristics.base.satiety -= totalHunger;
 
         message += `Сытость уменьшена на ${totalHunger}. Текущая сытость: ${this.state.characteristics.base.satiety}\n`;
 
-        // Show notification
         alert(message);
 
         this.saveState();
@@ -662,7 +610,6 @@ class CharacterSheet {
         let messages = [];
         messages.push("Конец раунда:");
 
-        // Restore endurance
         const maxEndurance = this.state.characteristics.base.endurance + this.state.characteristics.modifiers.endurance;
         const enduranceRestored = maxEndurance - this.state.characteristics.current.endurance;
         if (enduranceRestored > 0) {
@@ -672,18 +619,14 @@ class CharacterSheet {
             messages.push(`Выносливость уже максимальная (${maxEndurance}).`);
         }
 
-        // Apply status effects
         const statusMessages = window.statusesManager.applyRoundEffects();
         messages = messages.concat(statusMessages);
 
-        // Save and update
         this.saveState();
         this.updateAllCharacteristics();
 
-        // Show notification
         alert(messages.join('\n'));
 
-        // Update display after alert
         if (window.statusesManager) {
             window.statusesManager.renderBlock();
         }
@@ -705,13 +648,11 @@ class CharacterSheet {
         const panel = document.getElementById('actionsPanel');
         if (!panel) return;
 
-        // Не позволяем перетаскивать на мобильных
         if (window.innerWidth <= 768) return;
 
         let isDragging = false;
         let startX, startY, startLeft, startTop;
 
-        // Обработчик mousedown на панели
         const mouseDownHandler = (e) => {
             if (e.target.closest('.action-btn') || e.target.closest('.toggle-panel')) return;
 
@@ -727,7 +668,6 @@ class CharacterSheet {
             e.preventDefault();
         };
 
-        // Обработчик mousemove на документе
         const mouseMoveHandler = (e) => {
             if (!isDragging) return;
 
@@ -737,7 +677,6 @@ class CharacterSheet {
             const newLeft = startLeft + deltaX;
             const newTop = startTop + deltaY;
 
-            // Ограничиваем перемещение в пределах окна
             const maxLeft = window.innerWidth - panel.offsetWidth;
             const maxTop = window.innerHeight - panel.offsetHeight;
 
@@ -745,13 +684,11 @@ class CharacterSheet {
             panel.style.top = Math.max(0, Math.min(newTop, maxTop)) + 'px';
         };
 
-        // Обработчик mouseup на документе
         const mouseUpHandler = () => {
             if (isDragging) {
                 isDragging = false;
                 panel.style.cursor = 'move';
 
-                // Сохраняем позицию
                 const rect = panel.getBoundingClientRect();
                 this.state.actionsPanelPosition.x = rect.left;
                 this.state.actionsPanelPosition.y = rect.top;
@@ -759,12 +696,10 @@ class CharacterSheet {
             }
         };
 
-        // Сохраняем ссылки на обработчики для возможного удаления
         if (!this.actionsPanelMouseHandlers) {
             this.actionsPanelMouseHandlers = [];
         }
 
-        // Удаляем старые обработчики если они есть
         if (this.actionsPanelMouseHandlers.length > 0) {
             const [oldMouseDown, oldMouseMove, oldMouseUp] = this.actionsPanelMouseHandlers;
             panel.removeEventListener('mousedown', oldMouseDown);
@@ -772,7 +707,6 @@ class CharacterSheet {
             document.removeEventListener('mouseup', oldMouseUp);
         }
 
-        // Добавляем новые обработчики
         panel.addEventListener('mousedown', mouseDownHandler);
         document.addEventListener('mousemove', mouseMoveHandler);
         document.addEventListener('mouseup', mouseUpHandler);
@@ -784,7 +718,6 @@ class CharacterSheet {
         const panel = document.getElementById('actionsPanel');
         if (!panel) return;
 
-        // Не применяем позицию на мобильных
         if (window.innerWidth <= 768) return;
 
         if (this.state.actionsPanelPosition.x !== null && this.state.actionsPanelPosition.y !== null) {
@@ -797,7 +730,6 @@ class CharacterSheet {
         const panel = document.getElementById('actionsPanel');
         if (!panel) return;
 
-        // Центрируем панель по центру окна
         const panelWidth = panel.offsetWidth;
         const panelHeight = panel.offsetHeight;
         const centerX = (window.innerWidth - panelWidth) / 2;
@@ -806,12 +738,10 @@ class CharacterSheet {
         panel.style.left = Math.max(0, centerX) + 'px';
         panel.style.top = Math.max(0, centerY) + 'px';
 
-        // Сохраняем позицию
         this.state.actionsPanelPosition.x = panel.offsetLeft;
         this.state.actionsPanelPosition.y = panel.offsetTop;
         this.saveState();
         
-        // Пересоздаем обработчик перетаскивания
         this.setupActionsPanelDrag();
     }
 
@@ -863,7 +793,6 @@ class CharacterSheet {
     }
 
     restoreCombatSkillsCollapsedState() {
-        // Восстанавливаем состояние сворачивания разделов боевых навыков
         if (window.combatSkillsManager && this.state.combatSkillsCollapsedSections) {
             window.combatSkillsManager.collapsedSections = { ...this.state.combatSkillsCollapsedSections };
         }
@@ -873,7 +802,7 @@ class CharacterSheet {
 
     getActiveProfile() {
         const saved = localStorage.getItem('hk_rpg_active_profile');
-        return saved || '1'; // По умолчанию профиль 1
+        return saved || '1';
     }
 
     setActiveProfile(profileId) {
@@ -884,11 +813,25 @@ class CharacterSheet {
         return `hk_rpg_character_profile_${profileId}`;
     }
 
+    getProfileName(profileId) {
+        const storageKey = this.getProfileStorageKey(profileId);
+        const saved = localStorage.getItem(storageKey);
+        if (saved) {
+            try {
+                const data = JSON.parse(saved);
+                if (data.characterName && data.characterName.trim() !== '') {
+                    return data.characterName.substring(0, 3);
+                }
+            } catch (e) {
+            }
+        }
+        return '\u2014';
+    }
+
     saveCurrentProfile() {
         const profileId = this.getActiveProfile();
         const storageKey = this.getProfileStorageKey(profileId);
         
-        // Сохраняем текущее состояние в профиль
         const stateToSave = {
             ...this.state,
             characteristics: JSON.parse(JSON.stringify(this.state.characteristics)),
@@ -899,7 +842,8 @@ class CharacterSheet {
             combatSkills: JSON.parse(JSON.stringify(this.state.combatSkills)),
             paths: JSON.parse(JSON.stringify(this.state.paths)),
             charms: JSON.parse(JSON.stringify(this.state.charms)),
-            advancements: JSON.parse(JSON.stringify(this.state.advancements))
+            advancements: JSON.parse(JSON.stringify(this.state.advancements)),
+            supplies: JSON.parse(JSON.stringify(this.state.supplies))
         };
         
         localStorage.setItem(storageKey, JSON.stringify(stateToSave));
@@ -913,22 +857,21 @@ class CharacterSheet {
             try {
                 const loadedState = JSON.parse(saved);
                 
-                // Загружаем каждую часть состояния
                 Object.keys(loadedState).forEach(key => {
                     if (this.state.hasOwnProperty(key)) {
                         this.state[key] = loadedState[key];
                     }
                 });
                 
-                // Обеспечиваем целостность модификаторов
                 this.ensureModifiersIntegrity();
                 
-                // Добавляем advancements в blockOrder если его там нет
                 if (!this.state.blockOrder.includes('advancements')) {
                     this.state.blockOrder.push('advancements');
                 }
+                if (!this.state.blockOrder.includes('supplies')) {
+                    this.state.blockOrder.push('supplies');
+                }
                 
-                // Инициализируем techniqueSlots для обратной совместимости
                 if (this.state.techniqueSlots === undefined) {
                     this.state.techniqueSlots = 0;
                 }
@@ -943,23 +886,17 @@ class CharacterSheet {
             }
         }
         
-        // Если профиль пустой, возвращаем false
         return false;
     }
 
     switchProfile(profileId) {
         const currentProfileId = this.getActiveProfile();
         
-        // Сохраняем текущий профиль перед переключением
         this.saveCurrentProfile();
-        
-        // Переключаемся на новый профиль
         this.setActiveProfile(profileId);
         
-        // Загружаем новый профиль
         const loaded = this.loadProfile(profileId);
         
-        // Если профиль не загружен (пустой), инициализируем новое состояние
         if (!loaded) {
             this.state = {
                 characterName: '',
@@ -975,23 +912,25 @@ class CharacterSheet {
                 techniqueSlots: 0,
                 techniqueSlotsManualAdjustment: 0,
                 blockOrder: ['characteristics', 'statuses', 'traits', 'equipment',
-                           'nonCombatSkills', 'combatSkills', 'paths', 'charms', 'advancements'],
+                           'nonCombatSkills', 'combatSkills', 'paths', 'charms', 'advancements', 'supplies'],
                 collapsedBlocks: {},
                 actionsPanelCollapsed: false,
                 actionsPanelPosition: { x: null, y: null },
                 loadAdjustment: 0,
                 combatSkillsCollapsedSections: {},
                 geo: 0,
-                advancements: []
+                advancements: [],
+                supplies: [],
+                suppliesMax: 0,
+                suppliesCurrent: 0,
+                suppliesAdjustment: 0
             };
         }
         
-        // Обновляем отображение
         this.renderBlocks();
         this.updateAllCharacteristics();
         this.updateCharacterNameDisplay();
         
-        // Перерисовываем содержимое всех блоков и переназначаем обработчики
         if (window.characteristicsManager) {
             window.characteristicsManager.renderBlock();
             window.characteristicsManager.setupEventListeners();
@@ -1028,21 +967,20 @@ class CharacterSheet {
             window.advancementsManager.renderBlock();
             window.advancementsManager.setupEventListeners();
         }
+        if (window.suppliesManager) {
+            window.suppliesManager.renderBlock();
+            window.suppliesManager.setupEventListeners();
+        }
         
-        // Сохраняем состояние после переключения
         this.saveState();
-        
-        // Обновляем визуальное состояние кнопок профилей
         this.updateProfileButtonsDisplay();
         
-        // Восстанавливаем состояние панели действий
         if (window.innerWidth > 768) {
             this.applyActionsPanelPosition();
         } else {
             this.restoreActionsPanelState();
         }
         
-        // Обновляем обработчики кнопок действий
         if (window.setupActionButtons) {
             window.setupActionButtons();
         }
@@ -1055,7 +993,6 @@ class CharacterSheet {
         
         try {
             const data = JSON.parse(saved);
-            // Проверяем наличие значимых данных
             if (data.characterName && data.characterName.trim() !== '') return true;
             if (data.equipment && data.equipment.length > 0) return true;
             if (data.traits && data.traits.length > 0) return true;
@@ -1070,21 +1007,129 @@ class CharacterSheet {
 
     updateProfileButtonsDisplay() {
         const activeProfile = this.getActiveProfile();
-        
-        // Обновляем активное состояние кнопок
-        document.querySelectorAll('.profile-btn').forEach(btn => {
-            const profileId = btn.dataset.profile;
-            if (profileId === activeProfile) {
-                btn.classList.add('active');
-            } else {
-                btn.classList.remove('active');
+        const totalProfiles = 25;
+        const prevProfile = activeProfile > 1 ? String(parseInt(activeProfile) - 1) : String(totalProfiles);
+        const nextProfile = activeProfile < totalProfiles ? String(parseInt(activeProfile) + 1) : '1';
+
+        // Обновляем кнопку prev
+        const prevBtn = document.querySelector('.profile-btn-prev');
+        if (prevBtn) {
+            const label = prevBtn.querySelector('.profile-btn-label');
+            if (label) {
+                label.textContent = this.getProfileName(prevProfile);
             }
-            
-            // Показываем индикатор наличия данных
-            if (this.hasProfileData(profileId)) {
-                btn.classList.add('has-data');
+            prevBtn.dataset.profile = prevProfile;
+            if (this.hasProfileData(prevProfile)) {
+                prevBtn.classList.add('has-data');
             } else {
-                btn.classList.remove('has-data');
+                prevBtn.classList.remove('has-data');
+            }
+            prevBtn.title = `Предыдущий профиль (${prevProfile})`;
+        }
+
+        // Обновляем кнопку active
+        const activeBtn = document.querySelector('.profile-btn-active');
+        if (activeBtn) {
+            const label = activeBtn.querySelector('.profile-btn-label');
+            if (label) {
+                label.textContent = this.getProfileName(activeProfile);
+            }
+            activeBtn.dataset.profile = activeProfile;
+            activeBtn.classList.add('active');
+            if (this.hasProfileData(activeProfile)) {
+                activeBtn.classList.add('has-data');
+            } else {
+                activeBtn.classList.remove('has-data');
+            }
+            activeBtn.title = `Активный профиль (${activeProfile})`;
+        }
+
+        // Обновляем кнопку next
+        const nextBtn = document.querySelector('.profile-btn-next');
+        if (nextBtn) {
+            const label = nextBtn.querySelector('.profile-btn-label');
+            if (label) {
+                label.textContent = this.getProfileName(nextProfile);
+            }
+            nextBtn.dataset.profile = nextProfile;
+            if (this.hasProfileData(nextProfile)) {
+                nextBtn.classList.add('has-data');
+            } else {
+                nextBtn.classList.remove('has-data');
+            }
+            nextBtn.title = `Следующий профиль (${nextProfile})`;
+        }
+    }
+
+    showProfileSelectModal() {
+        const existingModal = document.getElementById('profileSelectModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+
+        const modal = document.createElement('div');
+        modal.id = 'profileSelectModal';
+        modal.className = 'modal active';
+        modal.innerHTML = `
+            <div class="modal-content profile-select-modal">
+                <div class="modal-header">
+                    <h3><i class="fas fa-exchange-alt"></i> Выбор профиля</h3>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p class="modal-description">Выберите профиль для переключения:</p>
+                    <div class="profile-select-grid" id="profileSelectGrid"></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn close-modal">Закрыть</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        const grid = modal.querySelector('#profileSelectGrid');
+        const activeProfile = this.getActiveProfile();
+
+        for (let i = 1; i <= 25; i++) {
+            const btn = document.createElement('button');
+            btn.className = 'profile-select-btn';
+            btn.dataset.profile = String(i);
+
+            if (String(i) === activeProfile) {
+                btn.classList.add('is-active');
+            }
+
+            if (this.hasProfileData(String(i))) {
+                btn.classList.add('has-data');
+            }
+
+            const profileName = this.getProfileName(String(i));
+
+            btn.innerHTML = `
+                <span class="profile-select-name">${profileName}</span>
+                <span class="profile-select-number">Профиль ${i}</span>
+            `;
+
+            btn.addEventListener('click', () => {
+                const profileId = btn.dataset.profile;
+                if (profileId !== this.getActiveProfile()) {
+                    this.switchProfile(profileId);
+                }
+                modal.remove();
+            });
+
+            grid.appendChild(btn);
+        }
+
+        // Закрытие
+        modal.querySelectorAll('.close-modal, .modal-close').forEach(el => {
+            el.addEventListener('click', () => modal.remove());
+        });
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
             }
         });
     }
@@ -1097,7 +1142,6 @@ class CharacterSheet {
             const storageKey = this.getProfileStorageKey(profileId);
             localStorage.removeItem(storageKey);
             
-            // Сбрасываем состояние к значениям по умолчанию
             this.state = {
                 characterName: '',
                 characteristics: this.getDefaultCharacteristics(),
@@ -1112,24 +1156,26 @@ class CharacterSheet {
                 techniqueSlots: 0,
                 techniqueSlotsManualAdjustment: 0,
                 blockOrder: ['characteristics', 'statuses', 'traits', 'equipment',
-                           'nonCombatSkills', 'combatSkills', 'paths', 'charms', 'advancements'],
+                           'nonCombatSkills', 'combatSkills', 'paths', 'charms', 'advancements', 'supplies'],
                 collapsedBlocks: {},
                 actionsPanelCollapsed: false,
                 actionsPanelPosition: { x: null, y: null },
                 loadAdjustment: 0,
                 combatSkillsCollapsedSections: {},
                 geo: 0,
-                advancements: []
+                advancements: [],
+                supplies: [],
+                suppliesMax: 0,
+                suppliesCurrent: 0,
+                suppliesAdjustment: 0
             };
             
-            // Обновляем отображение
             this.renderBlocks();
             this.updateAllCharacteristics();
             this.updateCharacterNameDisplay();
             this.saveState();
             this.updateProfileButtonsDisplay();
             
-            // Перерисовываем содержимое всех блоков
             if (window.characteristicsManager) {
                 window.characteristicsManager.renderBlock();
                 window.characteristicsManager.setupEventListeners();
@@ -1166,6 +1212,10 @@ class CharacterSheet {
                 window.advancementsManager.renderBlock();
                 window.advancementsManager.setupEventListeners();
             }
+            if (window.suppliesManager) {
+                window.suppliesManager.renderBlock();
+                window.suppliesManager.setupEventListeners();
+            }
             
             if (window.setupActionButtons) {
                 window.setupActionButtons();
@@ -1174,18 +1224,31 @@ class CharacterSheet {
     }
 
     setupProfileEventListeners() {
-        // Обработчики для кнопок профилей
-        document.querySelectorAll('.profile-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const profileId = e.currentTarget.dataset.profile;
-                this.switchProfile(profileId);
-            });
+        // Обработчик для prev кнопки
+        document.querySelector('.profile-btn-prev')?.addEventListener('click', (e) => {
+            const profileId = e.currentTarget.dataset.profile;
+            this.switchProfile(profileId);
+        });
+
+        // Обработчик для active кнопки
+        document.querySelector('.profile-btn-active')?.addEventListener('click', (e) => {
+            const profileId = e.currentTarget.dataset.profile;
+            this.switchProfile(profileId);
+        });
+
+        // Обработчик для next кнопки
+        document.querySelector('.profile-btn-next')?.addEventListener('click', (e) => {
+            const profileId = e.currentTarget.dataset.profile;
+            this.switchProfile(profileId);
+        });
+
+        // Обработчик для кнопки "Смена профиля"
+        document.getElementById('profileSwitchBtn')?.addEventListener('click', () => {
+            this.showProfileSelectModal();
         });
     }
 
-    // Модальное окно для изменения порядка блоков
     showBlockOrderModal() {
-        // Проверяем, существует ли уже модальное окно
         const existingModal = document.getElementById('blockOrderModal');
         if (existingModal) {
             existingModal.remove();
@@ -1200,7 +1263,8 @@ class CharacterSheet {
             'combatSkills': { title: 'Боевые навыки', icon: 'fas fa-fist-raised' },
             'paths': { title: 'Ранги пути', icon: 'fas fa-road' },
             'charms': { title: 'Амулеты', icon: 'fas fa-gem' },
-            'advancements': { title: 'Малые продвижения', icon: 'fas fa-arrow-up' }
+            'advancements': { title: 'Малые продвижения', icon: 'fas fa-arrow-up' },
+            'supplies': { title: 'Припасы', icon: 'fas fa-boxes' }
         };
 
         const modal = document.createElement('div');
@@ -1225,7 +1289,6 @@ class CharacterSheet {
 
         document.body.appendChild(modal);
 
-        // Рендерим список блоков
         const listContainer = modal.querySelector('#blockOrderList');
         this.state.blockOrder.forEach((blockId, index) => {
             const blockType = blockTypes[blockId];
@@ -1251,7 +1314,6 @@ class CharacterSheet {
             }
         });
 
-        // Добавляем обработчики
         this.setupBlockOrderModalEventListeners(modal);
     }
 
@@ -1259,26 +1321,21 @@ class CharacterSheet {
         const self = this;
         let draggedItem = null;
 
-        // Закрытие модального окна
         modal.querySelector('.modal-close').addEventListener('click', () => {
             modal.remove();
         });
 
-        // Кнопка отмены
         modal.querySelector('#cancelBlockOrderBtn').addEventListener('click', () => {
             modal.remove();
         });
 
-        // Кнопка сохранения
         modal.querySelector('#saveBlockOrderBtn').addEventListener('click', () => {
             const newOrder = Array.from(modal.querySelectorAll('.block-order-item')).map(item => item.dataset.blockId);
             this.state.blockOrder = newOrder;
             this.saveState();
             this.renderBlocks();
 
-            // Небольшая задержка чтобы DOM успел обновиться
             setTimeout(() => {
-                // Перерисовываем содержимое всех блоков
                 if (window.characteristicsManager) {
                     window.characteristicsManager.renderBlock();
                     window.characteristicsManager.setupEventListeners();
@@ -1315,12 +1372,15 @@ class CharacterSheet {
                     window.advancementsManager.renderBlock();
                     window.advancementsManager.setupEventListeners();
                 }
+                if (window.suppliesManager) {
+                    window.suppliesManager.renderBlock();
+                    window.suppliesManager.setupEventListeners();
+                }
             }, 0);
 
             modal.remove();
         });
 
-        // Drag and drop для элементов списка
         const listContainer = modal.querySelector('#blockOrderList');
 
         listContainer.addEventListener('dragstart', (e) => {
@@ -1350,7 +1410,6 @@ class CharacterSheet {
             }
         });
 
-        // Кнопки вверх/вниз
         listContainer.addEventListener('click', (e) => {
             const upBtn = e.target.closest('.block-order-up');
             const downBtn = e.target.closest('.block-order-down');
@@ -1393,16 +1452,13 @@ class CharacterSheet {
         const item1 = items[index1];
         const item2 = items[index2];
         
-        // Используем временный элемент для надёжного обмена
         const temp = document.createElement('div');
         
         if (index1 < index2) {
-            // Движение вниз
             container.insertBefore(temp, item1);
             container.insertBefore(item1, item2.nextSibling);
             container.insertBefore(item2, temp);
         } else {
-            // Движение вверх
             container.insertBefore(temp, item2);
             container.insertBefore(item2, item1.nextSibling);
             container.insertBefore(item1, temp);

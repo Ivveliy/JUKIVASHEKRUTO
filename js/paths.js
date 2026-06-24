@@ -183,6 +183,13 @@ class PathsManager {
                 </div>
                 
                 <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="path-supplies" ${path.isSuppliesPath ? 'checked' : ''}>
+                        <i class="fas fa-boxes equipment-field-icon"></i> Путь припасов (+1 припас за ранг)
+                    </label>
+                </div>
+
+                <div class="form-group">
                     <label>Ранг в пути</label>
                     <div class="path-rank">
                         <div class="rank-dot ${path.rank >= 1 ? 'filled' : ''}" data-modal-rank="1"></div>
@@ -275,7 +282,8 @@ class PathsManager {
             name: document.getElementById('path-name').value,
             type: document.getElementById('path-type').value,
             rank: rank,
-            rankDescriptions: rankDescriptions
+            rankDescriptions: rankDescriptions,
+            isSuppliesPath: document.getElementById('path-supplies').checked
         };
         
         if (pathIndex !== null) {

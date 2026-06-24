@@ -256,7 +256,9 @@ class CombatSkillsManager {
                 <div><small><i class="fas fa-bullseye skill-field-icon"></i><span class="skill-field-label">Характеристика атаки:</span> ${this.getCharacteristicName(skill.attackChar)} <span class="char-value-display">${attackCharValue}</span></small></div>
                 <div><small><i class="fas fa-coins skill-field-icon"></i><span class="skill-field-label">Стоимость:</span> ${skill.soulCost || 0} души, ${skill.enduranceCost || 0} выносливости</small></div>
                 ${skill.weaponName ? `<div><small><i class="fas fa-sword skill-field-icon"></i><span class="skill-field-label">Оружие:</span> ${skill.weaponName}</small></div>` : ''}
+                ${skill.weaponType ? `<div><small><i class="fas fa-khanda skill-field-icon"></i><span class="skill-field-label">Тип оружия:</span> ${skill.weaponType}</small></div>` : ''}
                 ${skill.damage ? `<div><small><i class="fas fa-burst skill-field-icon"></i><span class="skill-field-label">Урон:</span> ${skill.damage}</small></div>` : ''}
+                ${skill.quality ? `<div><small><i class="fas fa-star skill-field-icon"></i><span class="skill-field-label">Качество:</span> ${skill.quality}</small></div>` : ''}
             `;
         } else if (skill.type === 'magic') {
             const attackCharValue = this.getCharacteristicValue(skill.attackChar);
@@ -564,11 +566,11 @@ class CombatSkillsManager {
                     <div class="form-row">
                         <div class="form-group">
                             <label for="combat-soul-cost">Стоимость души</label>
-                            <input type="number" step="1" min="0" id="combat-soul-cost" class="form-control" value="${skill?.soulCost || 0}">
+                            <input type="number" step="1" id="combat-soul-cost" class="form-control" value="${skill?.soulCost || 0}">
                         </div>
                         <div class="form-group">
                             <label for="combat-endurance-cost">Стоимость выносливости</label>
-                            <input type="number" step="1" min="0" id="combat-endurance-cost" class="form-control" value="${skill?.enduranceCost || 0}">
+                            <input type="number" step="1" id="combat-endurance-cost" class="form-control" value="${skill?.enduranceCost || 0}">
                         </div>
                     </div>
                     
@@ -602,7 +604,7 @@ class CombatSkillsManager {
                     
                     <div class="form-group">
                         <label for="combat-quality">Качество оружия</label>
-                        <input type="number" step="1" min="1" id="combat-quality" class="form-control" value="${skill?.quality || 1}">
+                        <input type="number" step="1" id="combat-quality" class="form-control" value="${(skill?.quality !== undefined && skill?.quality !== null) ? skill.quality : 1}">
                     </div>
                 </div>
                 
@@ -610,7 +612,7 @@ class CombatSkillsManager {
                 <div id="magic-fields" style="display: ${skill?.type === 'magic' ? 'block' : 'none'}">
                     <div class="form-group">
                         <label for="magic-difficulty">Сложность</label>
-                        <input type="number" step="1" min="0" id="magic-difficulty" class="form-control" value="${skill?.difficulty || 0}">
+                        <input type="number" step="1" id="magic-difficulty" class="form-control" value="${skill?.difficulty || 0}">
                     </div>
 
                     <div class="form-group">
@@ -829,7 +831,12 @@ class CombatSkillsManager {
         if (weapon) {
             document.getElementById('combat-weapon-type').value = weapon.weaponType || '';
             document.getElementById('combat-damage').value = weapon.damage || '';
-            document.getElementById('combat-quality').value = weapon.quality || '1';
+            // Подставляем качество из снаряжения, если указано, иначе 1
+            if (weapon.quality !== undefined && weapon.quality !== null && !isNaN(weapon.quality)) {
+                document.getElementById('combat-quality').value = weapon.quality;
+            } else {
+                document.getElementById('combat-quality').value = '1';
+            }
         }
     }
     
@@ -858,7 +865,8 @@ class CombatSkillsManager {
             skillData.weaponName = document.getElementById('combat-weapon').value;
             skillData.weaponType = document.getElementById('combat-weapon-type').value;
             skillData.damage = document.getElementById('combat-damage').value;
-            skillData.quality = parseInt(document.getElementById('combat-quality').value) || 1;
+            const qualityVal = parseInt(document.getElementById('combat-quality').value);
+            skillData.quality = !isNaN(qualityVal) ? qualityVal : 1;
         } else if (type === 'magic') {
             skillData.difficulty = parseInt(document.getElementById('magic-difficulty').value) || 0;
             skillData.range = document.getElementById('magic-range').value;
