@@ -1591,6 +1591,7 @@ body {
     background-color: var(--light-bg) !important;
     padding: 4px 6px !important;
     min-width: 30px;
+    max-width: 120px;
     width: auto;
     display: inline-block;
     text-align: right;

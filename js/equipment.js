@@ -51,6 +51,9 @@ class EquipmentManager {
                 ${this.renderEquipmentCategories()}
             </div>
         `;
+        
+        // Устанавливаем ширину полей после рендера
+        this.initInputWidths();
     }
 
     renderCompactLoadDisplay() {
