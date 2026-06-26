@@ -127,7 +127,11 @@ class SuppliesManager {
     }
 
     calculateMaxSupplies() {
-        let maxSupplies = 0;
+        // Половина Проницательности (с учётом модификаторов), округлённая в большую сторону
+        const baseInsight = characterSheet.state.characteristics.base.insight;
+        const insightMod = characterSheet.state.characteristics.modifiers.insight || 0;
+        const totalInsight = baseInsight + insightMod;
+        let maxSupplies = Math.ceil(totalInsight / 2);
 
         // Припасы от черт
         characterSheet.state.traits.forEach(trait => {
