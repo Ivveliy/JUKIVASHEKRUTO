@@ -175,6 +175,11 @@ class EquipmentManager {
         // Получаем класс качества
         const qualityClass = this.getQualityClass(item.quality !== undefined ? item.quality : 1);
 
+        // Определяем, есть ли описание или модификации для показа в сворачиваемом блоке
+        const hasDescription = item.description && item.description.trim() !== '';
+        const hasMods = item.modifications && item.modifications.trim() !== '';
+        const hasExtraDetails = hasDescription || hasMods;
+
         if (item.category === 'weapons') {
             // Компактное отображение: Тип | Урон | Дальность | Качество | Стоимость
             let detailsParts = [
@@ -187,9 +192,16 @@ class EquipmentManager {
 
             compactDetails = `<div class="item-compact-details"><small>${detailsParts.join(' • ')}</small></div>`;
 
-            if (item.modifications) {
+            if (hasExtraDetails) {
                 hasModifications = true;
-                modifications = `<div><small>Модификации: ${item.modifications}</small></div>`;
+                let extraHtml = '';
+                if (hasDescription) {
+                    extraHtml += `<div class="item-description"><small>${this.formatDescription(item.description)}</small></div>`;
+                }
+                if (hasMods) {
+                    extraHtml += `<div class="item-modifications-text"><small>Модификации:<br>${item.modifications.replace(/\n/g, '<br>')}</small></div>`;
+                }
+                modifications = extraHtml;
             }
         } else if (item.category === 'armor') {
             // Компактное отображение: ПУ | Качество | Прочность | Стоимость
@@ -204,9 +216,16 @@ class EquipmentManager {
 
             compactDetails = `<div class="item-compact-details"><small>${detailsParts.join(' • ')}</small></div>`;
 
-            if (item.modifications) {
+            if (hasExtraDetails) {
                 hasModifications = true;
-                modifications = `<div><small>Модификации: ${item.modifications}</small></div>`;
+                let extraHtml = '';
+                if (hasDescription) {
+                    extraHtml += `<div class="item-description"><small>${this.formatDescription(item.description)}</small></div>`;
+                }
+                if (hasMods) {
+                    extraHtml += `<div class="item-modifications-text"><small>Модификации:<br>${item.modifications.replace(/\n/g, '<br>')}</small></div>`;
+                }
+                modifications = extraHtml;
             }
         } else {
             // Для прочего - описание и стоимость
@@ -508,6 +527,10 @@ class EquipmentManager {
                         </div>
                     </div>
                     <div class="form-group">
+                        <label for="weapon-description"><i class="fas fa-scroll equipment-field-icon"></i>Описание</label>
+                        <textarea id="weapon-description" class="form-control" rows="3">${equipment?.description || ''}</textarea>
+                    </div>
+                    <div class="form-group">
                         <label for="weapon-modifications"><i class="fas fa-wrench equipment-field-icon"></i>Модификации</label>
                         <textarea id="weapon-modifications" class="form-control" rows="2">${equipment?.modifications || ''}</textarea>
                     </div>
@@ -532,6 +555,10 @@ class EquipmentManager {
                     <div class="form-group">
                         <label for="armor-durability"><i class="fas fa-heart equipment-field-icon"></i>Прочность</label>
                         <input type="text" id="armor-durability" class="form-control" value="${equipment?.durability || ''}" placeholder="например: 5/5">
+                    </div>
+                    <div class="form-group">
+                        <label for="armor-description"><i class="fas fa-scroll equipment-field-icon"></i>Описание</label>
+                        <textarea id="armor-description" class="form-control" rows="3">${equipment?.description || ''}</textarea>
                     </div>
                     <div class="form-group">
                         <label for="armor-modifications"><i class="fas fa-wrench equipment-field-icon"></i>Модификации</label>
@@ -647,12 +674,14 @@ class EquipmentManager {
             equipmentData.damage = document.getElementById('weapon-damage').value;
             equipmentData.damageType = document.getElementById('weapon-damage-type').value;
             equipmentData.quality = parseInt(document.getElementById('weapon-quality').value);
+            equipmentData.description = document.getElementById('weapon-description').value;
             equipmentData.modifications = document.getElementById('weapon-modifications').value;
             equipmentData.used = document.getElementById('weapon-used').checked;
         } else if (category === 'armor') {
             equipmentData.absorption = document.getElementById('armor-absorption').value;
             equipmentData.quality = parseInt(document.getElementById('armor-quality').value);
             equipmentData.durability = document.getElementById('armor-durability').value;
+            equipmentData.description = document.getElementById('armor-description').value;
             equipmentData.modifications = document.getElementById('armor-modifications').value;
             equipmentData.used = document.getElementById('armor-used').checked;
         } else if (category === 'other') {

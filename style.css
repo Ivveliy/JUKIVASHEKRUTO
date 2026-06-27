@@ -1491,6 +1491,17 @@ body {
     margin-bottom: 0;
 }
 
+/* Текст модификаций снаряжения - сохранение переносов */
+.item-modifications-text {
+    box-sizing: border-box;
+    margin-top: 6px;
+    white-space: pre-wrap;
+}
+
+.item-modifications-text small {
+    white-space: pre-wrap;
+}
+
 /* Пояснение к характеристике в модальном окне */
 .char-explanation-content {
     box-sizing: border-box;
