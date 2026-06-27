@@ -73,6 +73,12 @@ class EquipmentManager {
         `;
     }
 
+    // Создаёт кнопку-подсказку с текстом
+    infoTooltip(text) {
+        const encoded = encodeURIComponent(text);
+        return `<button type="button" class="info-tooltip-btn" data-info="${encoded}"><i class="fas fa-question-circle"></i></button>`;
+    }
+
     // Установить ширину поля на основе содержимого
     setInputWidth(input) {
         if (!input) return;
@@ -204,13 +210,45 @@ class EquipmentManager {
                 modifications = extraHtml;
             }
         } else if (item.category === 'armor') {
-            // Компактное отображение: ПУ | Качество | Прочность | Стоимость
+            // Компактное отображение: ПУ | Качество | Прочность (+/-) | Стоимость
             let detailsParts = [
                 `<i class="fas fa-shield-alt equipment-field-icon"></i>ПУ: ${item.absorption || '0'}`,
                 `<i class="fas fa-star equipment-field-icon"></i><span class="${qualityClass}">Качество: ${item.quality !== undefined ? item.quality : '1'}</span>`
             ];
             if (item.durability !== undefined) {
-                detailsParts.push(`<i class="fas fa-heart equipment-field-icon"></i>Прочность: ${item.durability}`);
+                // Определяем класс цвета прочности
+                let durabilityClass = 'durability-normal';
+                const durMatch = String(item.durability).match(/^(\d+)\/(\d+)$/);
+                if (durMatch) {
+                    const current = parseInt(durMatch[1]);
+                    const max = parseInt(durMatch[2]);
+                    if (current >= max) {
+                        durabilityClass = 'durability-full';
+                    } else if (current <= 1) {
+                        durabilityClass = 'durability-low';
+                    } else {
+                        durabilityClass = 'durability-medium';
+                    }
+                } else {
+                    const num = parseInt(item.durability);
+                    if (num <= 1) {
+                        durabilityClass = 'durability-low';
+                    } else {
+                        durabilityClass = 'durability-medium';
+                    }
+                }
+                const durabilityControl = `
+                    <span class="durability-control">
+                        <button type="button" class="durability-btn durability-dec" data-index="${index}" title="Уменьшить прочность">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                        <span class="durability-value ${durabilityClass}">${item.durability}</span>
+                        <button type="button" class="durability-btn durability-inc" data-index="${index}" title="Увеличить прочность">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </span>
+                `;
+                detailsParts.push(`<i class="fas fa-heart equipment-field-icon"></i>Прочность: ${durabilityControl}`);
             }
             detailsParts.push(`<i class="fas fa-coins equipment-field-icon"></i>${item.cost || 0} гео`);
 
@@ -504,25 +542,25 @@ class EquipmentManager {
                 <div id="weapon-fields" style="display: ${equipment?.category === 'weapons' || !equipment ? 'block' : 'none'}">
                     <div class="form-row">
                         <div class="form-group" style="flex: 2;">
-                            <label for="weapon-type"><i class="fas fa-khanda equipment-field-icon"></i>Тип оружия</label>
+                            <label for="weapon-type"><i class="fas fa-khanda equipment-field-icon"></i>Тип оружия(Хватка)</label>
                             <input type="text" id="weapon-type" class="form-control" value="${equipment?.weaponType || ''}">
                         </div>
                         <div class="form-group" style="flex: 1;">
-                            <label for="weapon-range"><i class="fas fa-arrows-alt equipment-field-icon"></i>Дальность</label>
+                            <label for="weapon-range"><i class="fas fa-arrows-alt equipment-field-icon"></i>Дальность ${this.infoTooltip('Оружие ближнего боя используется для атаки цели рядом с атакующим. Атаки оружием с досягаемостью могут быть направлены как на существ рядом с атакующим, так и на тех, что находятся на расстоянии одной клетки от него. Такие атаки считаются ближними. Дальнобойное оружия имеет дальность (Х), где Х — максимальное число клеток, в пределах которых можно проводить атаку. Некоторое метательное оружие имеет показатели как ближнего, так и дальнего боя.')}</label>
                             <input type="text" id="weapon-range" class="form-control" value="${equipment?.range || ''}" placeholder="например: 1-3">
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label for="weapon-damage"><i class="fas fa-crosshairs equipment-field-icon"></i>Урон</label>
-                            <input type="text" id="weapon-damage" class="form-control" value="${equipment?.damage || ''}" placeholder="1d6">
+                            <input type="text" id="weapon-damage" class="form-control" value="${equipment?.damage || ''}" placeholder="">
                         </div>
                         <div class="form-group">
                             <label for="weapon-damage-type"><i class="fas fa-sword equipment-field-icon"></i>Тип урона</label>
                             <input type="text" id="weapon-damage-type" class="form-control" value="${equipment?.damageType || ''}" placeholder="рубящий">
                         </div>
                         <div class="form-group">
-                            <label for="weapon-quality"><i class="fas fa-star equipment-field-icon"></i>Качество</label>
+                            <label for="weapon-quality"><i class="fas fa-star equipment-field-icon"></i>Качество ${this.infoTooltip('Качество оружия определяет, сколько костей добавляется к броску атаки оружием. В исходном виде Качество оружия составляет 1, но этот показатель может меняться за счет Улучшения оружия и некоторых Модификаций.')}</label>
                             <input type="number" step="1" id="weapon-quality" class="form-control" value="${equipment?.quality !== undefined ? equipment.quality : 1}">
                         </div>
                     </div>
@@ -540,12 +578,17 @@ class EquipmentManager {
                             <i class="fas fa-check-circle equipment-field-icon"></i>Используется
                         </label>
                     </div>
+                    <div class="equipment-type-info">
+                        <p><strong>Тяжелое оружие:</strong> Оружие весом 2 и больше считается тяжелым и накладывает Дисбаланс на жука, когда используется при атаке.</p>
+                        <p><strong>Хватка:</strong> Оружие, хватка которого обозначена как 2Р, нужно держать обеими руками, чтобы сражаться им. Жук-тягач или жук с Мощью 5 и выше может держать такое оружие в одной руке. Но некоторое оружие, слишком громоздкое для одной руки, помечено как 2Р+ и всегда двуручно, даже для подобных жуков.</p>
+                        <p><strong>Парное оружие:</strong> Если у жука есть два Легких оружия, их можно сделать парными. Жук, который атакует парным оружием, может сделать вторую атаку другим парным оружием в том же ходу. Парная атака тратит на одну Выносливость меньше (но не меньше 1). Оба оружия должны быть в руках во время первой атаки. Атака, следующая после парной атаки, не может быть парной.</p>
+                    </div>
                 </div>
 
                 <!-- Поля для брони -->
                 <div id="armor-fields" style="display: ${equipment?.category === 'armor' ? 'block' : 'none'}">
                     <div class="form-group">
-                        <label for="armor-absorption"><i class="fas fa-shield-alt equipment-field-icon"></i>Поглощение урона (ПУ)</label>
+                        <label for="armor-absorption"><i class="fas fa-shield-alt equipment-field-icon"></i>Поглощение урона (ПУ) ${this.infoTooltip('Некоторая броня имеет свойство понижения урона (ПУ). Понижение урона с помощью брони не уменьшает природный или магический урон, если только у брони нет соответствующей характеристики. Жуки с Мягким Телом могут использовать кубики Впитывания от брони, когда рискуют получить впитываемый урон.')}</label>
                         <input type="text" id="armor-absorption" class="form-control" value="${equipment?.absorption || ''}">
                     </div>
                     <div class="form-group">
@@ -553,7 +596,7 @@ class EquipmentManager {
                         <input type="number" step="1" id="armor-quality" class="form-control" value="${equipment?.quality !== undefined ? equipment.quality : 1}">
                     </div>
                     <div class="form-group">
-                        <label for="armor-durability"><i class="fas fa-heart equipment-field-icon"></i>Прочность</label>
+                        <label for="armor-durability"><i class="fas fa-heart equipment-field-icon"></i>Прочность ${this.infoTooltip('Когда на броске атаки выпадает хотя бы одна 6 и атака попадает, она наносит 1 урон Прочности брони противника. Броня с прочностью 0 считается пробитой и не защищает жука, пока тот ее не починит.')}</label>
                         <input type="text" id="armor-durability" class="form-control" value="${equipment?.durability || ''}" placeholder="например: 5/5">
                     </div>
                     <div class="form-group">
@@ -569,6 +612,9 @@ class EquipmentManager {
                             <input type="checkbox" id="armor-used" ${used ? 'checked' : ''}>
                             <i class="fas fa-check-circle equipment-field-icon"></i>Используется
                         </label>
+                    </div>
+                    <div class="equipment-type-info">
+                        <p><strong>Надевание брони:</strong> Надевание или снятие брони во время боя стоит 1 Выносливость для легкой брони, 2 для средней и 3 для тяжелой.</p>
                     </div>
                 </div>
 

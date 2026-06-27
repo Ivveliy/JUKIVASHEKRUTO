@@ -2581,6 +2581,33 @@ body {
     color: var(--primary-color);
 }
 
+/* Информационные блоки в окне добавления снаряжения */
+.equipment-type-info {
+    margin-top: 15px;
+    padding: 12px;
+    background-color: #f0f7ff;
+    border-left: 3px solid var(--accent-blue);
+    border-radius: 4px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.equipment-type-info p {
+    margin: 0.5em 0;
+}
+
+.equipment-type-info p:first-child {
+    margin-top: 0;
+}
+
+.equipment-type-info p:last-child {
+    margin-bottom: 0;
+}
+
+.equipment-type-info strong {
+    color: var(--primary-color);
+}
+
 /* Всплывающее окно подсказки */
 .info-tooltip-popup {
     position: fixed;
@@ -2664,4 +2691,59 @@ body {
 
 .supplies-note strong {
     color: var(--primary-color);
+}
+
+/* Управление прочностью брони */
+.durability-control {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.durability-btn {
+    background: none;
+    border: 1px solid var(--border-color);
+    border-radius: 3px;
+    cursor: pointer;
+    padding: 0;
+    width: 18px;
+    height: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    color: #555;
+    transition: all 0.15s ease;
+    line-height: 1;
+}
+
+.durability-btn:hover {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.durability-btn:active {
+    transform: scale(0.9);
+}
+
+.durability-value {
+    display: inline-block;
+    min-width: 30px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.durability-value.durability-full {
+    color: var(--accent-green);
+}
+
+.durability-value.durability-medium {
+    color: #e67e22;
+}
+
+.durability-value.durability-low {
+    color: var(--accent-red);
 }
