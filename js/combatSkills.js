@@ -252,13 +252,14 @@ class CombatSkillsManager {
 
         if (skill.type === 'combat') {
             const attackCharValue = this.getCharacteristicValue(skill.attackChar);
+            const qualityValue = (skill.quality !== undefined && skill.quality !== null) ? skill.quality : 0;
+            const totalAttack = attackCharValue + qualityValue;
             details = `
-                <div><small><i class="fas fa-bullseye skill-field-icon"></i><span class="skill-field-label">Характеристика атаки:</span> ${this.getCharacteristicName(skill.attackChar)} <span class="char-value-display">${attackCharValue}</span></small></div>
+                <div><small><i class="fas fa-bullseye skill-field-icon"></i><span class="skill-field-label">Характеристика атаки:</span> ${this.getCharacteristicName(skill.attackChar)} <span class="char-value-display">${totalAttack}</span> <span style="font-size: 0.85em; color: #888;">(${attackCharValue}+${qualityValue})</span></small></div>
                 <div><small><i class="fas fa-coins skill-field-icon"></i><span class="skill-field-label">Стоимость:</span> ${skill.soulCost || 0} души, ${skill.enduranceCost || 0} выносливости</small></div>
                 ${skill.weaponName ? `<div><small><i class="fas fa-sword skill-field-icon"></i><span class="skill-field-label">Оружие:</span> ${skill.weaponName}</small></div>` : ''}
                 ${skill.weaponType ? `<div><small><i class="fas fa-khanda skill-field-icon"></i><span class="skill-field-label">Тип оружия:</span> ${skill.weaponType}</small></div>` : ''}
                 ${skill.damage ? `<div><small><i class="fas fa-burst skill-field-icon"></i><span class="skill-field-label">Урон:</span> ${skill.damage}</small></div>` : ''}
-                ${skill.quality ? `<div><small><i class="fas fa-star skill-field-icon"></i><span class="skill-field-label">Качество:</span> ${skill.quality}</small></div>` : ''}
             `;
         } else if (skill.type === 'magic') {
             const attackCharValue = this.getCharacteristicValue(skill.attackChar);
