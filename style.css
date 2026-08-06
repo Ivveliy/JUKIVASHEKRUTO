@@ -299,6 +299,44 @@ body {
     font-weight: normal;
 }
 
+/* Кнопки экспорта/импорта всех профилей в окне выбора профиля */
+.profile-select-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid var(--border-color);
+    flex-wrap: wrap;
+}
+
+.profile-select-actions .btn {
+    flex: 1;
+    min-width: 140px;
+    color: white;
+}
+
+.profile-select-actions .btn-primary {
+    background-color: var(--accent-blue);
+    border-color: var(--accent-blue);
+}
+
+.profile-select-actions .btn-primary:hover {
+    background-color: #2980b9;
+    border-color: #2980b9;
+    color: white;
+}
+
+.profile-select-actions .btn-secondary {
+    background-color: #7f8c8d;
+    border-color: #7f8c8d;
+}
+
+.profile-select-actions .btn-secondary:hover {
+    background-color: #6c7a7a;
+    border-color: #6c7a7a;
+    color: white;
+}
+
 .profile-select-btn .profile-select-name {
     font-size: 1rem;
     font-weight: bold;

@@ -250,6 +250,91 @@ class CharacterSheet {
         reader.readAsText(file);
     }
     
+    // Экспорт всех профилей
+    exportAllProfiles() {
+        const profiles = {};
+        for (let i = 1; i <= 25; i++) {
+            const storageKey = this.getProfileStorageKey(String(i));
+            const saved = localStorage.getItem(storageKey);
+            if (saved) {
+                try {
+                    profiles[String(i)] = JSON.parse(saved);
+                } catch (e) {
+                    console.error(`Ошибка чтения профиля ${i}:`, e);
+                }
+            }
+        }
+        
+        if (Object.keys(profiles).length === 0) {
+            alert('Нет сохранённых профилей для экспорта');
+            return;
+        }
+        
+        const exportData = {
+            type: 'hkrpg_all_profiles',
+            version: 1,
+            profiles: profiles,
+            exportDate: new Date().toISOString()
+        };
+        
+        const dataStr = JSON.stringify(exportData, null, 2);
+        const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+        
+        const linkElement = document.createElement('a');
+        linkElement.setAttribute('href', dataUri);
+        linkElement.setAttribute('download', 'HKRPG_все_профили.json');
+        linkElement.click();
+    }
+    
+    // Импорт всех профилей
+    importAllProfiles(file) {
+        const reader = new FileReader();
+        
+        reader.onload = (e) => {
+            try {
+                const importData = JSON.parse(e.target.result);
+                
+                if (!importData.type || importData.type !== 'hkrpg_all_profiles' || !importData.profiles) {
+                    alert('Ошибка: Файл не является корректным файлом экспорта профилей HKRPG');
+                    return;
+                }
+                
+                const profiles = importData.profiles;
+                const profileIds = Object.keys(profiles);
+                
+                if (profileIds.length === 0) {
+                    alert('В импортируемом файле нет профилей');
+                    return;
+                }
+                
+                const confirmMsg = `Вы собираетесь импортировать ${profileIds.length} профилей. Это заменит все текущие сохранённые профили. Продолжить?`;
+                if (!confirm(confirmMsg)) {
+                    return;
+                }
+                
+                // Очистка всех текущих профилей
+                for (let i = 1; i <= 25; i++) {
+                    const storageKey = this.getProfileStorageKey(String(i));
+                    localStorage.removeItem(storageKey);
+                }
+                
+                // Запись импортированных профилей
+                profileIds.forEach(id => {
+                    const storageKey = this.getProfileStorageKey(id);
+                    localStorage.setItem(storageKey, JSON.stringify(profiles[id]));
+                });
+                
+                // Перезагрузка страницы для применения изменений
+                location.reload();
+                
+            } catch (error) {
+                alert('Ошибка при чтении файла: ' + error.message);
+            }
+        };
+        
+        reader.readAsText(file);
+    }
+    
     validateImportedState(state) {
         const requiredKeys = ['characteristics', 'statuses', 'traits', 'equipment'];
         return requiredKeys.every(key => state.hasOwnProperty(key));
@@ -1076,9 +1161,18 @@ class CharacterSheet {
                     <h3><i class="fas fa-exchange-alt"></i> Выбор профиля</h3>
                     <button class="modal-close">&times;</button>
                 </div>
-                <div class="modal-body">
+<div class="modal-body">
                     <p class="modal-description">Выберите профиль для переключения:</p>
                     <div class="profile-select-grid" id="profileSelectGrid"></div>
+                    <div class="profile-select-actions">
+                        <button class="btn btn-primary" id="exportAllProfilesBtn" title="Экспортировать все сохранённые профили">
+                            <i class="fas fa-download"></i> Экспорт всех профилей
+                        </button>
+                        <button class="btn btn-secondary" id="importAllProfilesBtn" title="Импортировать все профили разом">
+                            <i class="fas fa-upload"></i> Импорт всех профилей
+                        </button>
+                        <input type="file" id="importAllProfilesFile" accept=".json" style="display: none;">
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button class="btn close-modal">Закрыть</button>
@@ -1122,7 +1216,7 @@ class CharacterSheet {
             grid.appendChild(btn);
         }
 
-        // Закрытие
+// Закрытие
         modal.querySelectorAll('.close-modal, .modal-close').forEach(el => {
             el.addEventListener('click', () => modal.remove());
         });
@@ -1130,6 +1224,23 @@ class CharacterSheet {
         modal.addEventListener('click', (e) => {
             if (e.target === modal) {
                 modal.remove();
+            }
+        });
+
+        // Экспорт всех профилей
+        modal.querySelector('#exportAllProfilesBtn')?.addEventListener('click', () => {
+            this.exportAllProfiles();
+        });
+
+        // Импорт всех профилей
+        modal.querySelector('#importAllProfilesBtn')?.addEventListener('click', () => {
+            modal.querySelector('#importAllProfilesFile').click();
+        });
+
+        modal.querySelector('#importAllProfilesFile')?.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                this.importAllProfiles(e.target.files[0]);
+                e.target.value = '';
             }
         });
     }
